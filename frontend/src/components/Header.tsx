@@ -16,7 +16,7 @@ const Header = () => {
   const theme = useTheme();
 
   const navLinks = [
-    { href: "/job-postings", label: "Run Model" },
+    { href: "/run-model", label: "Run Model" },
     { href: "/reports", label: "Reports" },
     { href: "/map", label: "Map" },
   ];
@@ -38,7 +38,7 @@ const Header = () => {
               "&:hover": { color: theme.palette.primary.dark },
             }}
           >
-            DataCenterSuitability
+            Data Center Suitability Tool
           </Typography>
 
           {/* Navigation Links */}
