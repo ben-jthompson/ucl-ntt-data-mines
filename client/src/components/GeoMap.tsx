@@ -6,6 +6,7 @@ import {
   Marker,
   useMapEvents,
   Circle,
+  Popup,
 } from "react-leaflet";
 import { useEffect } from "react";
 import "leaflet/dist/leaflet.css";
@@ -64,7 +65,12 @@ function LocationMarker({
 
   return position ? (
     <>
-      <Marker position={position} />
+      <Marker position={position}>
+        <Popup>
+          lat: {Math.round(position[0] * 10000) / 10000}; lng:{" "}
+          {Math.round(position[1] * 10000) / 10000}
+        </Popup>
+      </Marker>
       <Circle center={position} radius={radius} />
     </>
   ) : null;
@@ -89,7 +95,15 @@ export default function GeoMap({
   }, []);
 
   return (
-    <Box sx={{ height: "400px", borderRadius: 2, overflow: "hidden", mt: 3 }}>
+    <Box
+      sx={{
+        height: "400px",
+        borderRadius: 2,
+        overflow: "hidden",
+        mt: 3,
+        textAlign: "center",
+      }}
+    >
       {UKBound != null ? (
         <MapContainer
           center={{ lat: 53.505, lng: -0.09 }}

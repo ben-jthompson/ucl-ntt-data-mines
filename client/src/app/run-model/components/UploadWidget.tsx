@@ -1,41 +1,99 @@
-import { useState, Fragment } from "react";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Box,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
+  Input,
+} from "@mui/material";
 
 type UploadWidgetProps = {
   open: boolean;
   handleClose: () => void;
+  onFilesUploaded: (files: string[]) => void;
+  existingFiles: string[];
 };
 
-export default function UploadWidget({ open, handleClose }: UploadWidgetProps) {
+export default function UploadWidget({
+  open,
+  handleClose,
+  onFilesUploaded,
+  existingFiles,
+}: UploadWidgetProps) {
+  const [localFiles, setLocalFiles] = useState<string[]>(existingFiles);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles = Array.from(files).map((file) => file.name);
+    const updated = [...localFiles, ...newFiles];
+    setLocalFiles(updated);
+    onFilesUploaded(updated);
+  };
+
+  const handleFileRemove = (fileName: string) => {
+    const updated = localFiles.filter((file) => file !== fileName);
+    setLocalFiles(updated);
+    onFilesUploaded(updated);
+  };
+
+  const handleDialogClose = () => {
+    handleClose();
+  };
+
   return (
-    <Fragment>
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">
-          {"Use Google's location service?"}
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            Let Google help apps determine location. This means sending
-            anonymous location data to Google, even when no apps are running.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Disagree</Button>
-          <Button onClick={handleClose} autoFocus>
-            Agree
+    <Dialog open={open} onClose={handleDialogClose} maxWidth="sm" fullWidth>
+      <DialogTitle>Upload Files</DialogTitle>
+      <DialogContent>
+        <Box>
+          <Button variant="contained" component="label">
+            Choose Files
+            <Input
+              type="file"
+              onChange={handleFileChange}
+              sx={{ display: "none" }}
+            />
           </Button>
-        </DialogActions>
-      </Dialog>
-    </Fragment>
+        </Box>
+
+        <Box mt={3}>
+          <Typography variant="subtitle1" gutterBottom>
+            Uploaded Files
+          </Typography>
+          {localFiles.length > 0 ? (
+            <List dense>
+              {localFiles.map((file, index) => (
+                <ListItem
+                  key={index}
+                  secondaryAction={
+                    <IconButton
+                      edge="end"
+                      onClick={() => handleFileRemove(file)}
+                    >
+                      Delete
+                    </IconButton>
+                  }
+                >
+                  <ListItemText primary={file} />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography variant="body2">No files uploaded yet.</Typography>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleDialogClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
   );
 }

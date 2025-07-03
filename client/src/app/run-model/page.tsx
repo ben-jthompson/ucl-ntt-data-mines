@@ -13,11 +13,15 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
+import dynamic from "next/dynamic";
 
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import ModelSetup from "./components/ModelSetup";
+const ResultMap = dynamic(() => import("./components/ResultMap"), {
+  ssr: false,
+});
 
 export default function RunModel() {
   const [apiCall, setApiCall] = useState("Loading...");
@@ -37,170 +41,86 @@ export default function RunModel() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [coords, setCoords] = useState<[number, number] | null>(null);
+  const [radius, setRadius] = useState(10000);
+
   const router = useRouter();
   // const { data: session, status } = useSession(); // include status
 
-  const isValidYear = (year: string) => {
-    const num = Number(year);
-    return /^\d{4}$/.test(year) && num >= 1950 && num <= 2050;
-  };
-
+  {
+    /* logic to allow/disable progress */
+  }
   const isStepValid = () => {
     switch (activeStep) {
       case 0:
-        return true;
+        return coords != null;
       // case 1:
-      //   return (
-      //     formData.firstName &&
-      //     formData.surname &&
-      //     formData.studentEmail &&
-      //     formData.course &&
-      //     (formData.course !== "other" ||
-      //       (formData.customCourse && formData.customCourse.length >= 3)) &&
-      //     formData.uclId &&
-      //     ((formData.graduationYear && formData.graduationYear !== "custom") ||
-      //       (formData.customGraduationYear &&
-      //         isValidYear(formData.customGraduationYear))) &&
-      //     formData.personalEmail &&
-      //     /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(
-      //       formData.personalEmail
-      //     ) &&
-      //     formData.studentType &&
-      //     formData.preferredJobLocation
-      //   );
       // case 2:
-      //   return (
-      //     formData.ethnicity &&
-      //     formData.gender &&
-      //     formData.dateOfBirth &&
-      //     formData.address
-      //   );
       // case 3:
-      //   return (
-      //     formData.receiveUpdates &&
-      //     formData.shareEmail &&
-      //     formData.isPrivate &&
-      //     formData.resumeReminderInterval
-      //   );
       default:
         return true;
     }
   };
 
-  // Form data state
-  // const [formData, setFormData] = useState({
-  //   // Personal Information
-  //   firstName: "",
-  //   surname: "",
-  //   studentEmail: session?.user.email || "ucabbjt@ucl.ac.uk",
-  //   uclId: session?.user.upi || "bjtho63",
-  //   studentType: "",
-  //   personalEmail: "",
-  //   graduationYear: "",
-  //   customGraduationYear: "",
-  //   course: "",
-  //   customCourse: "",
-  //   preferredJobLocation: "",
-
-  //   // Personal details
-  //   address: "",
-  //   dateOfBirth: "",
-  //   gender: "",
-  //   ethnicity: "",
-
-  //   // Preferences
-  //   receiveUpdates: true,
-  //   shareEmail: true,
-  //   isPrivate: true,
-  //   resumeReminderInterval: "Two months",
-  // });
-  // useEffect(() => {
-  //   if (status === "authenticated" && session?.user) {
-  //     const fullName = session.user.name || "";
-  //     const [firstName, ...rest] = fullName.split(" ");
-  //     const surname = rest.join(" ");
-
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       firstName,
-  //       surname,
-  //       studentEmail: session.user.email || prev.studentEmail,
-  //       uclId: session.user.upi || prev.uclId,
-  //     }));
-  //   } else if (status === "unauthenticated") {
-  //     // Redirect if not authenticated
-  //     router.push("/login");
-  //   }
-  // }, [session, status, router]);
-
-  // const handleNext = async () => {
-  //   console.log(`[Registration Page] Moving to step ${activeStep + 1}`);
-  //   if (activeStep === 0) {
-  //     setActiveStep((prevStep) => prevStep + 1);
-  //   }
-  //   try {
-  //     let response;
-  //     if (activeStep === 1) {
-  //     } else if (activeStep === 2) {
-  //     }
-
-  //     if (response?.success) {
-  //       setActiveStep((prevStep) => prevStep + 1);
-  //     } else {
-  //       console.error('Error updating:', response?.error || 'Unknown error');
-  //     }
-  //   } catch (err) {
-  //     console.error('Unexpected error during step transition:', err);
-  //   }
-  // };
-
+  {
+    /* increment progress bar */
+  }
+  const handleNext = async () => {
+    console.log(`Moving to step ${activeStep + 1}`);
+    setActiveStep((prevStep) => prevStep + 1);
+  };
+  {
+    /* decrement progress bar */
+  }
   const handleBack = () => {
-    console.log(`[Registration Page] Moving back to step ${activeStep - 1}`);
+    console.log(`Moving back to step ${activeStep - 1}`);
     setActiveStep((prevStep) => prevStep - 1);
   };
 
-  // const handleSubmit = async () => {
-  //   try {
-  //     console.log('[Registration Page] Starting form submission');
-  //     setSaving(true);
-  //     setError(null);
-  //     const preferencesResponse = await insertStudentPreferences(formData);
-
-  //     if (preferencesResponse?.success) {
-  //       setSaving(false);
-  //       router.push('/my-profile');
-  //     } else {
-  //       console.error('Error updating:', preferencesResponse?.error || 'Unknown error');
-  //     }
-  //   } catch (err) {
-  //     console.error('[Registration Page] Error during registration:', err);
-  //     if (err instanceof Error) {
-  //       console.error('[Registration Page] Error details:', {
-  //         message: err.message,
-  //         stack: err.stack,
-  //         name: err.name
-  //       });
-  //     }
-  //     setError('Failed to complete registration. Please try again.');
-  //   } finally {
-  //     setSaving(false);
-  //   }
-  // };
+  const handleComplete = () => {
+    console.log(`Routing to home`);
+    router.push("/");
+  };
 
   const renderContent = (step: number) => {
     switch (step) {
-      case 0: // Welcome Step
+      case 0:
         return (
-          <Box sx={{ textAlign: "center" }}>
-            <ModelSetup />
-          </Box>
+          <ModelSetup
+            setCoords={setCoords}
+            radius={radius}
+            setRadius={setRadius}
+          />
         );
-      // case 1:
-      //   return <PersonalInfoForm formData={formData} setFormData={setFormData} />;
-      // case 2:
-      //   return <PersonalDetailsForm formData={formData} setFormData={setFormData} />;
-      // case 3:
-      //   return <PreferencesForm formData={formData} setFormData={setFormData} />;
+      case 1:
+        return (
+          <div>
+            Coords: {coords[0]}, {coords[1]}
+            Radius: {radius}
+          </div>
+        );
+      case 2:
+        return (
+          <div>
+            Coords: {coords[0]}, {coords[1]}
+            Radius: {radius};;; 2
+          </div>
+        );
+      case 3:
+        return (
+          <>
+            {" "}
+            return (
+            <div>
+              Coords: {coords[0]}, {coords[1]}
+              Radius: {radius} ;;; 2
+            </div>
+            );
+            <div> Results</div>
+            <ResultMap coords={coords} radius={radius} />
+          </>
+        );
       // default:
       //   return null;
     }
@@ -239,17 +159,17 @@ export default function RunModel() {
 
           <Box>
             {activeStep === steps.length - 1 ? (
-              <Button variant="contained" onClick={() => {}} disabled={saving}>
-                {saving ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  "Complete Registration"
-                )}
+              <Button
+                variant="contained"
+                onClick={handleComplete}
+                disabled={saving}
+              >
+                {saving ? <CircularProgress size={24} /> : "Complete"}
               </Button>
             ) : (
               <Button
                 variant="contained"
-                onClick={() => {}}
+                onClick={handleNext}
                 disabled={!isStepValid()}
               >
                 Next
