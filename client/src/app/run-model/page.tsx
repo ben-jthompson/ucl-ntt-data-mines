@@ -20,8 +20,10 @@ import { useSession } from "next-auth/react";
 
 import Setup from "./components/Setup";
 import ContextValidation from "./components/ContextValidation";
+import ModelRunning from "./components/ModelRunning";
+import Output from "./components/Output";
 
-const ResultMap = dynamic(() => import("./components/ResultMap"), {
+const ResultMap = dynamic(() => import("../../components/ResultMap"), {
   ssr: false,
 });
 
@@ -104,43 +106,19 @@ export default function RunModel() {
       case 1:
         return (
           coords && (
-            <>
-              <div>
-                Coords: {coords[0]}, {coords[1]}
-                Radius: {radius}
-              </div>
-              <ContextValidation
-                coords={coords}
-                radius={radius}
-                model={model}
-                setModel={setModel}
-                uploadedFiles={uploadedFiles}
-              />
-            </>
+            <ContextValidation
+              coords={coords}
+              radius={radius}
+              model={model}
+              setModel={setModel}
+              uploadedFiles={uploadedFiles}
+            />
           )
         );
       case 2:
-        return (
-          coords && (
-            <div>
-              Coords: {coords[0]}, {coords[1]}
-              Radius: {radius};;; 2
-            </div>
-          )
-        );
+        return <ModelRunning />;
       case 3:
-        return (
-          coords && (
-            <>
-              <div>
-                Coords: {coords[0]}, {coords[1]}
-                Radius: {radius} ;;; 2
-              </div>
-              ;<div> Results</div>
-              <ResultMap coords={coords} radius={radius} />
-            </>
-          )
-        );
+        return coords && <Output coords={coords} radius={radius} />;
       // default:
       //   return null;
     }

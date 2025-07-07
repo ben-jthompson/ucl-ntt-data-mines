@@ -4,15 +4,7 @@ import {
   Grid,
   Box,
   Typography,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  List,
-  ListItem,
-  ListItemText,
-  Button,
-  SelectChangeEvent,
+  Link,
   Accordion,
   AccordionDetails,
   AccordionSummary,
@@ -24,7 +16,7 @@ import { useState, useEffect } from "react";
 import UploadWidget from "./UploadWidget";
 import dynamic from "next/dynamic";
 
-const ResultMap = dynamic(() => import("./ResultMap"), {
+const ResultMap = dynamic(() => import("../../../components/ResultMap"), {
   ssr: false,
 });
 
@@ -41,6 +33,7 @@ export default function ContextValidation({
   setModel: (model: {}) => void;
   uploadedFiles: string[] | null;
 }) {
+  // Store for OpenStreetMap API Response
   type AreaDescription = {
     locality?: string;
     county?: string;
@@ -53,6 +46,20 @@ export default function ContextValidation({
     country: "",
     fullAddress: "",
   });
+  // Resources found from the internet
+  type foundResource = {
+    file: string;
+    source: string;
+    description?: string;
+  };
+  const [foundResources, setFoundResources] = useState<foundResource[]>([
+    {
+      file: "Abandoned Mines Dataset",
+      source:
+        "https://www.data.gov.uk/dataset/15777eb2-a97e-4dc8-b435-0e4292d6575c/abandoned-mines-catalogue",
+      description: "Description of plans for abandoned mines in the UK",
+    },
+  ]);
 
   const apiUrl = `https://nominatim.openstreetmap.org/reverse?lat=${coords[0]}&lon=${coords[1]}&format=json`;
   useEffect(() => {
@@ -101,20 +108,75 @@ export default function ContextValidation({
               <Typography variant="subtitle1" gutterBottom>
                 Uploaded Files
               </Typography>
-              {uploadedFiles.map((file_name, desc) => (
-                <Accordion key={file_name}>
-                  <AccordionSummary
-                    expandIcon={<ArrowDropDownIcon />}
-                    aria-controls="panel1-content"
-                    id={file_name}
-                  >
-                    <Typography component="span">{file_name}</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Typography>{desc}</Typography>
-                  </AccordionDetails>
-                </Accordion>
-              ))}
+              <Box
+                mt={3}
+                sx={{
+                  maxHeight: 200,
+                  overflowY: "auto",
+                  border: "1px solid #ccc",
+                  borderRadius: 2,
+                  p: 1,
+                }}
+              >
+                {uploadedFiles.map((file_name, desc) => (
+                  <Accordion key={file_name}>
+                    <AccordionSummary
+                      expandIcon={<ArrowDropDownIcon />}
+                      aria-controls="panel1-content"
+                      id={file_name}
+                    >
+                      <Typography component="span">{file_name}</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Typography>{desc}</Typography>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Box>
+            </Box>
+          )}
+          {/* Uploaded Files List */}
+          {foundResources && (
+            <Box mt={3}>
+              <Typography variant="subtitle1" gutterBottom>
+                Key Resources found
+              </Typography>
+              <Box
+                mt={3}
+                sx={{
+                  maxHeight: 200,
+                  overflowY: "auto",
+                  border: "1px solid #ccc",
+                  borderRadius: 2,
+                  p: 1,
+                }}
+              >
+                {foundResources.map((resource, ind) => (
+                  <Accordion key={resource.file}>
+                    <AccordionSummary
+                      expandIcon={<ArrowDropDownIcon />}
+                      aria-controls="panel1-content"
+                      id={resource.file}
+                    >
+                      <Typography component="span">{resource.file}</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Typography>
+                        {resource.description || "No description available."}
+                      </Typography>
+                      <Link
+                        href={resource.source}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        underline="hover"
+                        color="#00CEC8"
+                      >
+                        View Source
+                      </Link>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Box>
             </Box>
           )}
         </Box>
@@ -127,28 +189,15 @@ export default function ContextValidation({
             textAlign: "center",
           }}
         >
-          <FormControl fullWidth>
-            <InputLabel id="demo-simple-select-label">Radius</InputLabel>
-            <Select
-              labelId="select-label"
-              id="radius-select"
-              value={radius}
-              label="Location Area"
-              // onChange={handleRadiusChange}
-            >
-              <MenuItem value={5000}>5km</MenuItem>
-              <MenuItem value={10000}>10km</MenuItem>
-              <MenuItem value={20000}>20km</MenuItem>
-            </Select>
-          </FormControl>
-
-          <ResultMap coords={coords} radius={radius} />
-          <Typography>Searching for results in:</Typography>
-          <Typography>{areaDescription.county}</Typography>
+          <ResultMap coords={coords} radius={radius} result={false} />
           {areaDescription.locality ? (
-            <Typography>{areaDescription.locality}</Typography>
+            <Typography>
+              Searching in this area: {areaDescription.locality}
+            </Typography>
           ) : (
-            <Typography>{areaDescription.county}</Typography>
+            <Typography>
+              Searching in this area: {areaDescription.county}
+            </Typography>
           )}
           <Typography>{areaDescription.fullAddress}</Typography>
         </Box>

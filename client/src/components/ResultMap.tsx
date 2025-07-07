@@ -1,9 +1,10 @@
 "use client";
 
-import { Box } from "@mui/material";
+import { Box, Grid, Typography } from "@mui/material";
 import { MapContainer, TileLayer, Marker, Circle, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { stringify } from "querystring";
 
 // Apply default marker
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -37,11 +38,21 @@ function LocationMarker({
 export default function ResultMap({
   coords,
   radius,
+  result,
 }: {
   coords: [number, number] | null;
   radius: number;
+  result: boolean;
 }) {
-  return (
+  const zoomScale: { [key: number]: number } = {
+    5000: 12,
+    10000: 11,
+    20000: 10,
+  };
+
+  const zoom = result ? (zoomScale[radius] ?? 7) - 1 : zoomScale[radius] ?? 6;
+
+  return coords ? (
     <Box
       sx={{
         height: "400px",
@@ -52,8 +63,8 @@ export default function ResultMap({
       }}
     >
       <MapContainer
-        center={{ lat: 53.505, lng: -0.09 }}
-        zoom={6}
+        center={{ lat: coords[0], lng: coords[1] }}
+        zoom={zoom}
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
@@ -63,5 +74,16 @@ export default function ResultMap({
         <LocationMarker coords={coords} radius={radius} />
       </MapContainer>
     </Box>
+  ) : (
+    <Grid
+      container
+      justifyContent="center"
+      alignItems="center"
+      style={{ minHeight: "100vh" }}
+    >
+      <Typography>
+        An unexpected error occurred. Please reload the page.
+      </Typography>
+    </Grid>
   );
 }
