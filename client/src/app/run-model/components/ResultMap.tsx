@@ -1,5 +1,6 @@
 "use client";
 
+import { Box } from "@mui/material";
 import { MapContainer, TileLayer, Marker, Circle, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -41,16 +42,26 @@ export default function ResultMap({
   radius: number;
 }) {
   return (
-    <MapContainer
-      center={{ lat: 53.505, lng: -0.09 }}
-      zoom={6}
-      style={{ height: "100%", width: "100%" }}
+    <Box
+      sx={{
+        height: "400px",
+        borderRadius: 2,
+        overflow: "hidden",
+        mt: 3,
+        textAlign: "center",
+      }}
     >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
-      />
-      <LocationMarker coords={coords} radius={radius} />
-    </MapContainer>
+      <MapContainer
+        center={{ lat: 53.505, lng: -0.09 }}
+        zoom={6}
+        style={{ height: "100%", width: "100%" }}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; OpenStreetMap contributors"
+        />
+        <LocationMarker coords={coords} radius={radius} />
+      </MapContainer>
+    </Box>
   );
 }

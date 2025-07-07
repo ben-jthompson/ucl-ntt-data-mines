@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Grid,
   Box,
@@ -20,20 +22,20 @@ const GeoMap = dynamic(() => import("../../../components/GeoMap"), {
   ssr: false,
 });
 
-export default function ModelSetup({
+export default function Setup({
   setCoords,
   radius,
   setRadius,
+  uploadedFiles,
+  setUploadedFiles,
 }: {
   setCoords: (coords: [number, number]) => void;
   radius: number;
   setRadius: (radius: number) => void;
+  uploadedFiles: string[];
+  setUploadedFiles: (uploadedFiles: string[]) => void;
 }) {
   const [capacity, setCapacity] = useState<string>("");
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([
-    "geology_report.pdf",
-    "cooling_study.docx",
-  ]);
   const [widget, setWidget] = useState(false);
 
   const handleWidgetOpen = () => {

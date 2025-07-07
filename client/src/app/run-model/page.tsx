@@ -18,7 +18,9 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-import ModelSetup from "./components/ModelSetup";
+import Setup from "./components/Setup";
+import ContextValidation from "./components/ContextValidation";
+
 const ResultMap = dynamic(() => import("./components/ResultMap"), {
   ssr: false,
 });
@@ -44,9 +46,13 @@ export default function RunModel() {
 
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [radius, setRadius] = useState(10000);
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([
+    "geology_report.pdf",
+    "cooling_study.docx",
+  ]);
+  const [model, setModel] = useState<{}>({ place: "holder" });
 
   const router = useRouter();
-  // const { data: session, status } = useSession(); // include status
 
   {
     /* logic to allow/disable progress */
@@ -87,39 +93,53 @@ export default function RunModel() {
     switch (step) {
       case 0:
         return (
-          <ModelSetup
+          <Setup
             setCoords={setCoords}
             radius={radius}
             setRadius={setRadius}
+            uploadedFiles={uploadedFiles}
+            setUploadedFiles={setUploadedFiles}
           />
         );
       case 1:
         return (
-          <div>
-            Coords: {coords[0]}, {coords[1]}
-            Radius: {radius}
-          </div>
+          coords && (
+            <>
+              <div>
+                Coords: {coords[0]}, {coords[1]}
+                Radius: {radius}
+              </div>
+              <ContextValidation
+                coords={coords}
+                radius={radius}
+                model={model}
+                setModel={setModel}
+                uploadedFiles={uploadedFiles}
+              />
+            </>
+          )
         );
       case 2:
         return (
-          <div>
-            Coords: {coords[0]}, {coords[1]}
-            Radius: {radius};;; 2
-          </div>
+          coords && (
+            <div>
+              Coords: {coords[0]}, {coords[1]}
+              Radius: {radius};;; 2
+            </div>
+          )
         );
       case 3:
         return (
-          <>
-            {" "}
-            return (
-            <div>
-              Coords: {coords[0]}, {coords[1]}
-              Radius: {radius} ;;; 2
-            </div>
-            );
-            <div> Results</div>
-            <ResultMap coords={coords} radius={radius} />
-          </>
+          coords && (
+            <>
+              <div>
+                Coords: {coords[0]}, {coords[1]}
+                Radius: {radius} ;;; 2
+              </div>
+              ;<div> Results</div>
+              <ResultMap coords={coords} radius={radius} />
+            </>
+          )
         );
       // default:
       //   return null;

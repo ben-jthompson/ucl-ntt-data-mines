@@ -30,6 +30,7 @@ export default function UploadWidget({
   const [localFiles, setLocalFiles] = useState<string[]>(existingFiles);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // TODO: Add logic to ensure file names are unique
     const files = event.target.files;
     if (!files) return;
 
