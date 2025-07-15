@@ -7,15 +7,18 @@ import {
   useMapEvents,
   Circle,
   Popup,
+  GeoJSON,
 } from "react-leaflet";
+import type { GeoJsonObject } from "geojson";
 import { useEffect } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useState } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Switch, FormControlLabel } from "@mui/material";
 import { Feature, Polygon, MultiPolygon, FeatureCollection } from "geojson";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
+import axios from "axios";
 
 // Apply default marker
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -84,14 +87,27 @@ export default function GeoMap({
   radius: number;
 }) {
   const [UKBound, setUKBound] = useState<FeatureCollection | null>(null);
+  const [showLayer, setShowLayer] = useState(false);
+  const [UKGeology, setUKGeology] = useState<FeatureCollection | null>(null);
 
   useEffect(() => {
-    fetch("/geojson/uk.geo.json")
-      .then((res) => res.json())
-      .then((data) => {
-        setUKBound(data);
-        console.log(data);
-      });
+    axios
+      .get("/geojson/uk.geo.json")
+      .then((res) => {
+        setUKBound(res.data);
+        console.log("UK bounds loaded:", res.data);
+      })
+      .catch((err) => console.error("Failed to load UK bounds:", err));
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get("/geojson/geology_bedrock.geojson")
+      .then((res) => {
+        setUKGeology(res.data);
+        console.log("GeoJSON loaded:", res.data);
+      })
+      .catch((err) => console.error("Failed to load geology data:", err));
   }, []);
 
   return (
@@ -104,6 +120,17 @@ export default function GeoMap({
         textAlign: "center",
       }}
     >
+      <FormControlLabel
+        control={
+          <Switch
+            checked={showLayer}
+            onChange={() => setShowLayer(!showLayer)}
+            color="primary"
+          />
+        }
+        label="Show UK Boundary"
+      />
+
       {UKBound != null ? (
         <MapContainer
           center={{ lat: 53.505, lng: -0.09 }}
@@ -119,10 +146,22 @@ export default function GeoMap({
             radius={radius}
             bound={UKBound}
           />
+
+          {showLayer && (
+            <GeoJSON
+              data={UKGeology as GeoJsonObject}
+              style={() => ({
+                color: "purple",
+                weight: 1,
+                fillOpacity: 0.4,
+              })}
+            />
+          )}
         </MapContainer>
       ) : (
         <Typography>Loading boundaries...</Typography>
       )}
+      {showLayer && <Typography>Layer visible</Typography>}
     </Box>
   );
 }

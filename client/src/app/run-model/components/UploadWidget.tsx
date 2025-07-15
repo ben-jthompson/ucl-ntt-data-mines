@@ -12,13 +12,18 @@ import {
   ListItemText,
   IconButton,
   Input,
+  TextField,
 } from "@mui/material";
+import Delete from "@mui/icons-material/Delete";
+
+import axios from "axios";
+import { UploadedFile } from "@/types/UploadedFile";
 
 type UploadWidgetProps = {
   open: boolean;
   handleClose: () => void;
-  onFilesUploaded: (files: string[]) => void;
-  existingFiles: string[];
+  onFilesUploaded: (files: UploadedFile[]) => void;
+  existingFiles: UploadedFile[];
 };
 
 export default function UploadWidget({
@@ -27,21 +32,70 @@ export default function UploadWidget({
   onFilesUploaded,
   existingFiles,
 }: UploadWidgetProps) {
-  const [localFiles, setLocalFiles] = useState<string[]>(existingFiles);
+  const [localFiles, setLocalFiles] = useState<UploadedFile[]>(existingFiles);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [description, setDescription] = useState("");
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // TODO: Add logic to ensure file names are unique
-    const files = event.target.files;
-    if (!files) return;
+  // const handleFileUpload = async (
+  //   event: React.ChangeEvent<HTMLInputElement>
+  // ) => {
+  //   // TODO: Add logic to ensure file names are unique
+  //   console.log(event.target.files);
+  //   console.log("Target:", event.target);
+  //   const files = event.target.files;
+  //   if (!files) return;
 
-    const newFiles = Array.from(files).map((file) => file.name);
-    const updated = [...localFiles, ...newFiles];
-    setLocalFiles(updated);
-    onFilesUploaded(updated);
+  // const newFiles = Array.from(files).map((file) => file.name);
+  // const updated = [...localFiles, ...newFiles];
+  // setLocalFiles(updated);
+  // onFilesUploaded(updated);
+
+  //   axios.post("/api/upload");
+  // };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setSelectedFile(event.target.files[0]);
+    }
   };
 
-  const handleFileRemove = (fileName: string) => {
-    const updated = localFiles.filter((file) => file !== fileName);
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    axios
+      .post("http://localhost:8080/api/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((response) => {
+        console.log("Upload successful:", response.data);
+        const updated = [
+          ...localFiles,
+          {
+            file_name: selectedFile.name,
+            description: description,
+            id: 3,
+          },
+        ];
+        setLocalFiles(updated);
+        onFilesUploaded(updated);
+        setSelectedFile(null);
+        setDescription("");
+      })
+      .catch((error) => {
+        console.error("Upload error:", error);
+      });
+  };
+
+  const handleFileRemove = (file: UploadedFile) => {
+    axios.post("http://localhost:8080/api/delete", file.file_name);
+    const updated = localFiles.filter(
+      (doc) => doc.file_name !== file.file_name
+    );
     setLocalFiles(updated);
     onFilesUploaded(updated);
   };
@@ -59,9 +113,32 @@ export default function UploadWidget({
             Choose Files
             <Input
               type="file"
-              onChange={handleFileChange}
+              onChange={handleFileSelect}
+              accept=".doc,.docx,.xml,.shp,.pdf"
               sx={{ display: "none" }}
             />
+          </Button>
+
+          {selectedFile && (
+            <>
+              <Typography variant="body1">
+                Selected file: <strong>{selectedFile.name}</strong>
+              </Typography>
+              <TextField
+                label="File Description"
+                variant="outlined"
+                fullWidth
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </>
+          )}
+          <Button
+            variant="contained"
+            component="label"
+            onClick={handleFileUpload}
+          >
+            Submit
           </Button>
         </Box>
 
@@ -79,11 +156,11 @@ export default function UploadWidget({
                       edge="end"
                       onClick={() => handleFileRemove(file)}
                     >
-                      Delete
+                      <Delete />
                     </IconButton>
                   }
                 >
-                  <ListItemText primary={file} />
+                  <ListItemText primary={file.file_name} />
                 </ListItem>
               ))}
             </List>

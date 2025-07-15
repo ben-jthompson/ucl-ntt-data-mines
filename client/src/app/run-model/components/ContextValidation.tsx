@@ -12,8 +12,9 @@ import {
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 
+import axios from "axios";
 import { useState, useEffect } from "react";
-import UploadWidget from "./UploadWidget";
+import { UploadedFile } from "@/types/UploadedFile";
 import dynamic from "next/dynamic";
 
 const ResultMap = dynamic(() => import("../../../components/ResultMap"), {
@@ -31,7 +32,7 @@ export default function ContextValidation({
   radius: number;
   model: {};
   setModel: (model: {}) => void;
-  uploadedFiles: string[] | null;
+  uploadedFiles: UploadedFile[] | null;
 }) {
   // Store for OpenStreetMap API Response
   type AreaDescription = {
@@ -63,26 +64,23 @@ export default function ContextValidation({
 
   const apiUrl = `https://nominatim.openstreetmap.org/reverse?lat=${coords[0]}&lon=${coords[1]}&format=json`;
   useEffect(() => {
-    fetch(apiUrl)
-      .then((res) => {
-        return res.json();
-      })
-      .then((data) => {
-        setAreaDescription({
-          locality:
-            data.address.locality ||
-            data.address.neighbourhood ||
-            data.address.suburb ||
-            data.address.hamlet ||
-            data.address.village ||
-            data.address.town ||
-            data.address.city ||
-            data.address.county ||
-            "",
-          county: data.address.county || "",
-          fullAddress: data.display_name || "",
-        });
+    axios.get(apiUrl).then((res) => {
+      const data = res.data;
+      setAreaDescription({
+        locality:
+          data.address.locality ||
+          data.address.neighbourhood ||
+          data.address.suburb ||
+          data.address.hamlet ||
+          data.address.village ||
+          data.address.town ||
+          data.address.city ||
+          data.address.county ||
+          "",
+        county: data.address.county || "",
+        fullAddress: data.display_name || "",
       });
+    });
   }, []);
 
   return (
@@ -118,17 +116,17 @@ export default function ContextValidation({
                   p: 1,
                 }}
               >
-                {uploadedFiles.map((file_name, desc) => (
-                  <Accordion key={file_name}>
+                {uploadedFiles.map((file, ind) => (
+                  <Accordion key={file.file_name}>
                     <AccordionSummary
                       expandIcon={<ArrowDropDownIcon />}
                       aria-controls="panel1-content"
-                      id={file_name}
+                      id={file}
                     >
-                      <Typography component="span">{file_name}</Typography>
+                      <Typography component="span">{file.file_name}</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
-                      <Typography>{desc}</Typography>
+                      <Typography>{file.description}</Typography>
                     </AccordionDetails>
                   </Accordion>
                 ))}

@@ -23,6 +23,8 @@ import ContextValidation from "./components/ContextValidation";
 import ModelRunning from "./components/ModelRunning";
 import Output from "./components/Output";
 
+import { UploadedFile } from "@/types/UploadedFile";
+
 const ResultMap = dynamic(() => import("../../components/ResultMap"), {
   ssr: false,
 });
@@ -48,9 +50,17 @@ export default function RunModel() {
 
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [radius, setRadius] = useState(10000);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([
-    "geology_report.pdf",
-    "cooling_study.docx",
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([
+    {
+      file_name: "geology_report.pdf",
+      description: "Report on geology of local area",
+      id: 1,
+    },
+    {
+      file_name: "cooling_study.docx",
+      description: "Study on mine water temperatures",
+      id: 2,
+    },
   ]);
   const [model, setModel] = useState<{}>({ place: "holder" });
 

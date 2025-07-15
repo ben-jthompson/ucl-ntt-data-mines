@@ -18,6 +18,8 @@ import { useState } from "react";
 import UploadWidget from "./UploadWidget";
 import dynamic from "next/dynamic";
 
+import { UploadedFile } from "@/types/UploadedFile";
+
 const GeoMap = dynamic(() => import("../../../components/GeoMap"), {
   ssr: false,
 });
@@ -32,8 +34,8 @@ export default function Setup({
   setCoords: (coords: [number, number]) => void;
   radius: number;
   setRadius: (radius: number) => void;
-  uploadedFiles: string[];
-  setUploadedFiles: (uploadedFiles: string[]) => void;
+  uploadedFiles: UploadedFile[];
+  setUploadedFiles: (uploadedFiles: UploadedFile[]) => void;
 }) {
   const [capacity, setCapacity] = useState<string>("");
   const [widget, setWidget] = useState(false);
@@ -116,7 +118,7 @@ export default function Setup({
             <List dense>
               {uploadedFiles.map((file, index) => (
                 <ListItem key={index}>
-                  <ListItemText primary={file} />
+                  <ListItemText primary={file.file_name} />
                 </ListItem>
               ))}
             </List>
@@ -125,7 +127,7 @@ export default function Setup({
           {/* Upload Button */}
           <Box mt={2}>
             <Button variant="outlined" onClick={handleWidgetOpen}>
-              Upload More Files
+              Upload Files
             </Button>
           </Box>
         </Box>
