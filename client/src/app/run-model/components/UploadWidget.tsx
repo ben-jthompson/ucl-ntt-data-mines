@@ -34,24 +34,8 @@ export default function UploadWidget({
 }: UploadWidgetProps) {
   const [localFiles, setLocalFiles] = useState<UploadedFile[]>(existingFiles);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<File | null>(null);
   const [description, setDescription] = useState("");
-
-  // const handleFileUpload = async (
-  //   event: React.ChangeEvent<HTMLInputElement>
-  // ) => {
-  //   // TODO: Add logic to ensure file names are unique
-  //   console.log(event.target.files);
-  //   console.log("Target:", event.target);
-  //   const files = event.target.files;
-  //   if (!files) return;
-
-  // const newFiles = Array.from(files).map((file) => file.name);
-  // const updated = [...localFiles, ...newFiles];
-  // setLocalFiles(updated);
-  // onFilesUploaded(updated);
-
-  //   axios.post("/api/upload");
-  // };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -91,13 +75,15 @@ export default function UploadWidget({
       });
   };
 
-  const handleFileRemove = (file: UploadedFile) => {
-    axios.post("http://localhost:8080/api/delete", file.file_name);
-    const updated = localFiles.filter(
-      (doc) => doc.file_name !== file.file_name
-    );
-    setLocalFiles(updated);
-    onFilesUploaded(updated);
+  const handleFileRemove = (filename: string) => {
+    axios
+      .post("http://localhost:8080/api/delete", { file: filename })
+      .then((response) => {
+        console.log("Upload successful:", response.data);
+        const updated = localFiles.filter((doc) => doc.file_name !== filename);
+        setLocalFiles(updated);
+        onFilesUploaded(updated);
+      });
   };
 
   const handleDialogClose = () => {
@@ -154,7 +140,7 @@ export default function UploadWidget({
                   secondaryAction={
                     <IconButton
                       edge="end"
-                      onClick={() => handleFileRemove(file)}
+                      onClick={() => handleFileRemove(file.file_name)}
                     >
                       <Delete />
                     </IconButton>
