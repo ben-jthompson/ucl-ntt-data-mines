@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
+from graph.pipeline import Pipeline
 
 app = Flask(__name__)
 CORS(app)
@@ -73,6 +74,12 @@ def get_geojson(filename):
         return send_file(filepath, mimetype='application/json')
     except FileNotFoundError:
         return {"error": "File not found"}, 404
+
+@app.route("/api/query")
+def query_model(location, query):
+    pipeline = Pipeline(location, query)
+    return pipeline.run()
+
 
 
 
