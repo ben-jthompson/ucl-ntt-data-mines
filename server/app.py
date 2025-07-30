@@ -11,13 +11,16 @@ CORS(app)
 def upload_file():
     if "file" not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
-
+    valid_files = {'.pdf', '.docx', '.csv', '.json', '.geojson', '.geo.json'}
     file = request.files["file"]
 
     if file.filename == "":
         return jsonify({"error": "No selected file"}), 400
+    is_valid_file = [file.filename.endswith(file_type) for file_type in valid_files]
+    if True not in is_valid_file:
+        return jsonify({"error": "File type invalid"}), 400
 
-    upload_folder = os.path.join(os.getcwd(), "uploads")
+    upload_folder = os.path.join(os.getcwd(), "server/uploads")
 
     # Ensure the upload directory exists
     try:
@@ -62,7 +65,7 @@ def delete_file():
         print('xr')
         return jsonify({"error": f"Failed to save file: {e}"}), 500
 
-    return jsonify({"success": "File uploaded successfully", "filename": 'x'}), 200
+    return jsonify({"success": "File deleted successfully", "filename": file}), 200
 
 @app.route('/api/geojson/<filename>')
 def get_geojson(filename):

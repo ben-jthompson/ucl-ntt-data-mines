@@ -36,12 +36,12 @@ export default function UploadWidget({
     existingFiles
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileToDelete, setFileToDelete] = useState<File | null>(null);
   const [description, setDescription] = useState("");
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       setSelectedFile(event.target.files[0]);
+      setDescription("");
     }
   };
 
@@ -86,6 +86,8 @@ export default function UploadWidget({
       })
       .catch((error) => {
         console.error("Upload error:", error);
+        if (error.response.data.error === "File type invalid")
+          alert("Please select a valid file.");
       });
   };
 
@@ -121,7 +123,9 @@ export default function UploadWidget({
               style={{ display: "none" }}
             />
           </Button>
-
+          <Typography variant="body2" color="secondary">
+            Supported inputs: .pdf, .docx, .csv, .json, .geojson, .geo.json
+          </Typography>
           {selectedFile && (
             <>
               <Typography variant="body1">
@@ -134,9 +138,11 @@ export default function UploadWidget({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
+              <Button variant="contained" onClick={handleFileUpload}>
+                Submit
+              </Button>
             </>
           )}
-          <Button onClick={handleFileUpload}>Submit</Button>
         </Box>
 
         <Box mt={3}>
