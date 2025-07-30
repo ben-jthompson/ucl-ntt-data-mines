@@ -1,6 +1,5 @@
 from dotenv import load_dotenv
 import os
-import logging
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, ToolMessage
 from langchain.retrievers.multi_query import MultiQueryRetriever

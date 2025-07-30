@@ -13,7 +13,7 @@ from langchain.schema import Document
 from bs4 import BeautifulSoup
 from chroma_funcs import url_suitability_scoring
 from urllib.parse import urljoin
-from utils import download_file, document_to_dict, dict_to_document, extract_text_from_source
+from utils import download_file, document_to_dict, dict_to_document, extract_from_source
 from error_handler_class import ErrorHandler
 
 load_dotenv()
@@ -110,7 +110,7 @@ def download_and_parse_reports(results: List[Document]) -> List[Document]:
         if result.metadata['redirect_url'] and (result.metadata['redirect_url'].endswith('.pdf') or result.metadata['redirect_url'].endswith('.csv')):
             print('\nAttempting to download result:\n')
             download_file(result.metadata['redirect_url'])
-            extract_text_from_source(result.metadata['redirect_url'], result)
+            extract_from_source(result.metadata['redirect_url'], result)
     return results
 
 # scrape the text of the links retrieved

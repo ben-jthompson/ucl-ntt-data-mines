@@ -27,9 +27,7 @@ class Pipeline:
     
     def query_llm(self):
         querier = Querier(self.retriever, self.query)
-        
-        ques = querier.get_queries()
-        print('Queries are ', ques)
+        querier.get_queries()
         # querier.run(self.query)
         # with open('gpt-4o-mini-multiquery-output.txt', "r", encoding="utf-8") as f:
         #     data=f.read()

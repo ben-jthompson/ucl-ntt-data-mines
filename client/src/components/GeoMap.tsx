@@ -11,13 +11,17 @@ import {
   useMap,
   CircleMarker,
 } from "react-leaflet";
-import type { GeoJsonObject } from "geojson";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import { useState } from "react";
+import L, { PathOptions } from "leaflet";
 import { Box, Typography } from "@mui/material";
-import { Feature, Polygon, MultiPolygon, FeatureCollection } from "geojson";
+import {
+  GeoJsonObject,
+  Feature,
+  Polygon,
+  MultiPolygon,
+  FeatureCollection,
+} from "geojson";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
 import axios from "axios";
@@ -57,10 +61,13 @@ function LegendControl({
         font-size: 14px;
       ">
         <h4 style="margin: 0 0 4px 0;">Legend</h4>
-        ${Object.entries(layers)
-          .filter(([_, isVisible]) => isVisible)
-          .map(([layerName]) => layerLegend[layerName] || "")
-          .join("")}
+        ${
+          layers &&
+          Object.entries(layers)
+            .filter(([_, isVisible]) => isVisible)
+            .map(([layerName]) => layerLegend[layerName] || "")
+            .join("")
+        }
       </div>
     `;
 
@@ -84,7 +91,7 @@ function LocationMarker({
 }: {
   onSelect: (coords: [number, number]) => void;
   radius: number;
-  bound: FeatureCollection;
+  bound: FeatureCollection | null;
 }) {
   const [position, setPosition] = useState<[number, number] | null>(null);
   useMapEvents({
@@ -274,7 +281,7 @@ export default function GeoMap({
             {layerVisibility.mineExtent && mineExtent && (
               <GeoJSON
                 data={mineExtent}
-                style={() => ({
+                style={(feature: Feature): PathOptions => ({
                   color: "orange",
                   weight: 0.5,
                   fillOpacity: 0.3,
@@ -285,7 +292,7 @@ export default function GeoMap({
             {layerVisibility.aquifers && aquifers && (
               <GeoJSON
                 data={aquifers}
-                style={() => ({
+                style={(feature: Feature): PathOptions => ({
                   color: "blue",
                   weight: 0.5,
                   fillOpacity: 0.3,

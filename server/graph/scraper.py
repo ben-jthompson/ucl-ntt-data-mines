@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
 from server.graph.chroma_funcs import url_suitability_scoring
-from server.graph.utils import download_file, extract_text_from_source, document_to_dict, dict_to_document
+from server.graph.utils import download_file, extract_from_source, document_to_dict, dict_to_document, detect_file_type
 from server.graph.error_handler_class import ErrorHandler
 
 class Scraper:
@@ -26,6 +26,7 @@ class Scraper:
         self.search_api_key = os.getenv("SEARCH_API_KEY")
         self.driver = self._setup_driver()
         self.documents: List[Document] = []
+        self.unique = {'.pdf', '.docx', '.csv', '.shp','.json', '.geojson' }
 
     def _setup_driver(self):
         options = Options()
@@ -113,11 +114,13 @@ class Scraper:
     def download_and_parse_reports(self):
         for doc in self.documents:
             url = doc.metadata.get('redirect_url', '')
-            if url.endswith('.pdf') or url.endswith('.csv'):
+            filetype = detect_file_type(url)
+            # if the file is identified as non-conventional file type
+            if filetype in self.unique:
                 try:
                     print(f"Downloading {url}")
                     download_file(url)
-                    extract_text_from_source(url, doc)
+                    extract_from_source(url, doc)
                 except Exception as e:
                     print(f"Failed to download/parse {url}: {e}")
 
@@ -132,7 +135,7 @@ class Scraper:
             if redir_url in link_set:
                 continue
 
-            if redir_url == base_url or redir_url.endswith('.pdf') or redir_url.endswith('.csv'):
+            if redir_url == base_url or detect_file_type(redir_url) in self.unique:
                 filtered_docs.append(doc)
             else:
                 try:
