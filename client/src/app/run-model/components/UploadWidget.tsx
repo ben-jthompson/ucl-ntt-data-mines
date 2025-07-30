@@ -23,7 +23,7 @@ type UploadWidgetProps = {
   open: boolean;
   handleClose: () => void;
   onFilesUploaded: (files: UploadedFile[]) => void;
-  existingFiles: UploadedFile[];
+  existingFiles: UploadedFile[] | null;
 };
 
 export default function UploadWidget({
@@ -32,7 +32,9 @@ export default function UploadWidget({
   onFilesUploaded,
   existingFiles,
 }: UploadWidgetProps) {
-  const [localFiles, setLocalFiles] = useState<UploadedFile[]>(existingFiles);
+  const [localFiles, setLocalFiles] = useState<UploadedFile[] | null>(
+    existingFiles
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileToDelete, setFileToDelete] = useState<File | null>(null);
   const [description, setDescription] = useState("");
@@ -43,7 +45,7 @@ export default function UploadWidget({
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.MouseEvent) => {
     if (!selectedFile) return;
 
     const formData = new FormData();
@@ -57,14 +59,26 @@ export default function UploadWidget({
       })
       .then((response) => {
         console.log("Upload successful:", response.data);
-        const updated = [
-          ...localFiles,
-          {
-            file_name: selectedFile.name,
-            description: description,
-            id: 3,
-          },
-        ];
+        // TODO add id assignment
+        var updated = localFiles ?? [];
+        if (localFiles) {
+          updated = [
+            ...localFiles,
+            {
+              file_name: selectedFile.name,
+              description: description,
+              id: 3,
+            },
+          ];
+        } else {
+          updated = [
+            {
+              file_name: selectedFile.name,
+              description: description,
+              id: 3,
+            },
+          ];
+        }
         setLocalFiles(updated);
         onFilesUploaded(updated);
         setSelectedFile(null);
@@ -79,8 +93,11 @@ export default function UploadWidget({
     axios
       .post("http://localhost:8080/api/delete", { file: filename })
       .then((response) => {
-        console.log("Upload successful:", response.data);
-        const updated = localFiles.filter((doc) => doc.file_name !== filename);
+        console.log("Delete successful:", response.data);
+        var updated = localFiles ?? [];
+        if (localFiles) {
+          updated = localFiles.filter((doc) => doc.file_name !== filename);
+        }
         setLocalFiles(updated);
         onFilesUploaded(updated);
       });
@@ -97,11 +114,11 @@ export default function UploadWidget({
         <Box>
           <Button variant="contained" component="label">
             Choose Files
-            <Input
+            <input
               type="file"
               onChange={handleFileSelect}
-              accept=".doc,.docx,.xml,.shp,.pdf"
-              sx={{ display: "none" }}
+              accept=".docx,.xml,.shp,.pdf"
+              style={{ display: "none" }}
             />
           </Button>
 
@@ -119,20 +136,14 @@ export default function UploadWidget({
               />
             </>
           )}
-          <Button
-            variant="contained"
-            component="label"
-            onClick={handleFileUpload}
-          >
-            Submit
-          </Button>
+          <Button onClick={handleFileUpload}>Submit</Button>
         </Box>
 
         <Box mt={3}>
           <Typography variant="subtitle1" gutterBottom>
             Uploaded Files
           </Typography>
-          {localFiles.length > 0 ? (
+          {localFiles ? (
             <List dense>
               {localFiles.map((file, index) => (
                 <ListItem

@@ -9,12 +9,13 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from newspaper import Article
 from langchain.schema import Document
+from langchain_community.tools import DuckDuckGoSearchResults
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-from .chroma_funcs import url_suitability_scoring
-from .utils import download_file, extract_text_from_source, document_to_dict, dict_to_document
-from .error_handler_class import ErrorHandler
+from server.graph.chroma_funcs import url_suitability_scoring
+from server.graph.utils import download_file, extract_text_from_source, document_to_dict, dict_to_document
+from server.graph.error_handler_class import ErrorHandler
 
 class Scraper:
     def __init__(self, location: str, query: str):
@@ -35,29 +36,38 @@ class Scraper:
         return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     def run_search(self) -> dict:
-        response = requests.get(
-            "https://api.search.brave.com/res/v1/web/search",
-            headers={
-                "Accept": "application/json",
-                "Accept-Encoding": "gzip",
-                "x-subscription-token": self.search_api_key
-            },
-            params={
-                "q": self.query,
-                "count": 20,
-                "country": "GB"
-            },
-        ).json()
+        # TODO brave api start
+        # response = requests.get(
+        #     "https://api.search.brave.com/res/v1/web/search",
+        #     headers={
+        #         "Accept": "application/json",
+        #         "Accept-Encoding": "gzip",
+        #         "x-subscription-token": self.search_api_key
+        #     },
+        #     params={
+        #         "q": self.query,
+        #         "count": 20,
+        #         "country": "GB"
+        #     },
+        # ).json()
+        # TODO brave api end
 
-        with open('20output.json', "w", encoding="utf-8") as f:
-            json.dump(response['web'], f, indent=4, ensure_ascii=False)
+        # TODO free search api
+        ddg = DuckDuckGoSearchResults()
+        response = ddg.invoke(self.query)
+        # TODO free search end
 
-        return response['web']
+        # TODO cached response
+        with open('outputs/ddgoutput.json', "w", encoding="utf-8") as f:
+            json.dump(response, f, indent=4, ensure_ascii=False)
+        # TODO cached response end
+
+        return response
 
     def scrape_results(self, search_results=None):
         results = []
         if not search_results:
-            with open('20output.json', 'r', encoding='utf-8') as file:
+            with open('outputs/20output.json', 'r', encoding='utf-8') as file:
                 search_results = json.load(file)
 
         for result in search_results['results']:
@@ -144,7 +154,9 @@ class Scraper:
             json.dump([document_to_dict(doc) for doc in self.documents], f, indent=4, ensure_ascii=False)
 
     def run(self):
+        # TODO temp to bypass api
         # search_results = self.run_search()
+        # TODO temp end
         self.scrape_results()
         self.download_and_parse_reports()
         self.finalise_documents()

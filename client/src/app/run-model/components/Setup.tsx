@@ -34,7 +34,7 @@ export default function Setup({
   setCoords: (coords: [number, number]) => void;
   radius: number;
   setRadius: (radius: number) => void;
-  uploadedFiles: UploadedFile[];
+  uploadedFiles: UploadedFile[] | null;
   setUploadedFiles: (uploadedFiles: UploadedFile[]) => void;
 }) {
   const [capacity, setCapacity] = useState<string>("");
@@ -115,13 +115,17 @@ export default function Setup({
             <Typography variant="subtitle1" gutterBottom>
               Uploaded Files
             </Typography>
-            <List dense>
-              {uploadedFiles.map((file, index) => (
-                <ListItem key={index}>
-                  <ListItemText primary={file.file_name} />
-                </ListItem>
-              ))}
-            </List>
+            {uploadedFiles ? (
+              <List dense>
+                {uploadedFiles.map((file, index) => (
+                  <ListItem key={index}>
+                    <ListItemText primary={file.file_name} />
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography>No files uploaded.</Typography>
+            )}
           </Box>
 
           {/* Upload Button */}

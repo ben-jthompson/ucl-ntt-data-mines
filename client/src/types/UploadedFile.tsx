@@ -1,5 +1,5 @@
 export type UploadedFile = {
-  file_name?: string;
+  file_name: string;
   description?: string;
   id?: number;
 };

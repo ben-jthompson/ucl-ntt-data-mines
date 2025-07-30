@@ -121,7 +121,7 @@ export default function ContextValidation({
                     <AccordionSummary
                       expandIcon={<ArrowDropDownIcon />}
                       aria-controls="panel1-content"
-                      id={file}
+                      id={file.file_name}
                     >
                       <Typography component="span">{file.file_name}</Typography>
                     </AccordionSummary>

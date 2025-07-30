@@ -30,17 +30,6 @@ const ResultMap = dynamic(() => import("../../components/ResultMap"), {
 });
 
 export default function RunModel() {
-  const [apiCall, setApiCall] = useState("Loading...");
-
-  useEffect(() => {
-    fetch("http://localhost:8080/api/home")
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        setApiCall(data.message);
-      });
-  }, []);
-
   const steps = ["Setup", "Context Validation", "Model Running", "Output"];
 
   const [activeStep, setActiveStep] = useState(0);
@@ -48,21 +37,16 @@ export default function RunModel() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // state for user input
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [radius, setRadius] = useState(10000);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([
-    {
-      file_name: "geology_report.pdf",
-      description: "Report on geology of local area",
-      id: 1,
-    },
-    {
-      file_name: "cooling_study.docx",
-      description: "Study on mine water temperatures",
-      id: 2,
-    },
-  ]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[] | null>(
+    null
+  );
   const [model, setModel] = useState<{}>({ place: "holder" });
+
+  // state for model progress
+  const [status, setStatus] = useState(false);
 
   const router = useRouter();
 
@@ -74,23 +58,20 @@ export default function RunModel() {
       case 0:
         return coords != null;
       // case 1:
-      // case 2:
+      case 2:
+        return status == true;
       // case 3:
       default:
         return true;
     }
   };
 
-  {
-    /* increment progress bar */
-  }
+  // increment progress bar
   const handleNext = async () => {
     console.log(`Moving to step ${activeStep + 1}`);
     setActiveStep((prevStep) => prevStep + 1);
   };
-  {
-    /* decrement progress bar */
-  }
+  // decrement progress bar
   const handleBack = () => {
     console.log(`Moving back to step ${activeStep - 1}`);
     setActiveStep((prevStep) => prevStep - 1);
@@ -146,7 +127,7 @@ export default function RunModel() {
     );
   }
 
-  console.log("[Registration Page] Rendering main content");
+  // console.log("[Registration Page] Rendering main content");
   return (
     <Box sx={{ px: 5 }}>
       <Paper elevation={3} sx={{ p: 4 }}>

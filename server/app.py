@@ -1,14 +1,11 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response, stream_with_context
 from flask_cors import CORS
 import os
-from graph.pipeline import Pipeline
+import time
+from server.graph.pipeline import Pipeline
 
 app = Flask(__name__)
 CORS(app)
-
-@app.route('/api/home', methods=['GET'])
-def hello():
-    return jsonify({'message': 'Hello'})
 
 @app.route("/api/upload", methods=["POST"])
 def upload_file():
@@ -75,12 +72,32 @@ def get_geojson(filename):
     except FileNotFoundError:
         return {"error": "File not found"}, 404
 
-@app.route("/api/query")
-def query_model(location, query):
+@app.route("/api/run_pipeline")
+def run_pipeline():
+    location = request.args.get("location")
+    query = request.args.get("query")
     pipeline = Pipeline(location, query)
-    return pipeline.run()
 
+    def generate():
+        yield "data: Starting pipeline...\n\n"
+        time.sleep(2)
+        yield "data: Scraping documents...\n\n"
+        time.sleep(2)
+        pipeline.scrape()
+        yield "data: Embedding documents...\n\n"
+        time.sleep(2)
+        pipeline.embed()
+        yield "data: Querying LLM...\n\n"
+        time.sleep(2)
+        result = pipeline.query_llm()
+        yield f"data: DONE: {result}\n\n"
+        time.sleep(10)
+        yield "data: Querying LLM...\n\n"
+        yield "data: DONE\n\n"
 
+    return Response(stream_with_context(generate()), content_type='text/event-stream')
+
+    
 
 
 if __name__ == '__main__':
