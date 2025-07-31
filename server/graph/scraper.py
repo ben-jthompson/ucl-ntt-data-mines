@@ -55,8 +55,8 @@ class Scraper:
         # TODO brave api end
 
         # TODO free search api
-        ddg = DuckDuckGoSearchResults()
-        response = ddg.invoke(self.query)
+        # ddg = DuckDuckGoSearchResults()
+        # response = ddg.invoke(self.query)
         # TODO free search end
 
         # TODO cached response
@@ -147,7 +147,7 @@ class Scraper:
             if redir_url in link_set:
                 continue
             
-            # if info has already been scrapped, no need to rescrape
+            # if info has already been scraped, no need to rescrape
             if redir_url == base_url or file_type in self.unique or file_type in self.ms_unique:
                 filtered_docs.append(doc)
             else:

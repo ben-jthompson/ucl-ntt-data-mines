@@ -81,12 +81,12 @@ def run_pipeline():
     pipeline = Pipeline(location, query)
 
     def generate():
-        yield "data: Starting pipeline...\n\n"
+        yield f"data: Starting pipeline. Current query: {query}\n\n"
         time.sleep(2)
-        yield "data: Scraping documents...\n\n"
+        yield f"data: Scraping documents. Current query: {query}\n\n"
         time.sleep(2)
         pipeline.scrape()
-        yield "data: Embedding documents...\n\n"
+        yield f"data: Embedding documents. Current query: {query}\n\n"
         time.sleep(2)
         pipeline.embed()
         yield "data: Querying LLM...\n\n"
@@ -94,7 +94,6 @@ def run_pipeline():
         result = pipeline.query_llm()
         yield f"data: DONE: {result}\n\n"
         time.sleep(10)
-        yield "data: Querying LLM...\n\n"
         yield "data: DONE\n\n"
 
     return Response(stream_with_context(generate()), content_type='text/event-stream')

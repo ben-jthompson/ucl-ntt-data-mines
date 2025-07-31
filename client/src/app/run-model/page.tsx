@@ -40,6 +40,7 @@ export default function RunModel() {
   // state for user input
   const [coords, setCoords] = useState<[number, number] | null>(null);
   const [radius, setRadius] = useState(10000);
+  const [location, setLocation] = useState<string | undefined>("UK");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[] | null>(
     null
   );
@@ -58,6 +59,7 @@ export default function RunModel() {
       case 0:
         return coords != null;
       // case 1:
+      // TODO: wait for loading before allowing
       case 2:
         return status == true;
       // case 3:
@@ -101,13 +103,19 @@ export default function RunModel() {
               coords={coords}
               radius={radius}
               model={model}
+              setLocation={setLocation}
               setModel={setModel}
               uploadedFiles={uploadedFiles}
             />
           )
         );
       case 2:
-        return <ModelRunning />;
+        return (
+          <ModelRunning
+            location={location}
+            query={location + " Mine Water Heat Reuse Local Authority"}
+          />
+        );
       case 3:
         return coords && <Output coords={coords} radius={radius} />;
       // default:

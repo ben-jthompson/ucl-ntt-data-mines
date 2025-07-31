@@ -26,12 +26,14 @@ export default function ContextValidation({
   radius,
   model,
   setModel,
+  setLocation,
   uploadedFiles,
 }: {
   coords: [number, number];
   radius: number;
   model: {};
   setModel: (model: {}) => void;
+  setLocation: (location: string | undefined) => void;
   uploadedFiles: UploadedFile[] | null;
 }) {
   // Store for OpenStreetMap API Response
@@ -80,6 +82,17 @@ export default function ContextValidation({
         county: data.address.county || "",
         fullAddress: data.display_name || "",
       });
+      setLocation(
+        data.address.locality ||
+          data.address.neighbourhood ||
+          data.address.suburb ||
+          data.address.hamlet ||
+          data.address.village ||
+          data.address.town ||
+          data.address.city ||
+          data.address.county ||
+          "UK"
+      );
     });
   }, []);
 
