@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
 from server.graph.chroma_funcs import url_suitability_scoring
-from server.graph.utils import download_file, extract_from_source, document_to_dict, dict_to_document, detect_file_type
+from server.graph.utils import download_file, extract_from_source, document_to_dict, dict_to_document, detect_file_type, extract_ms_office_link
 from server.graph.error_handler_class import ErrorHandler
 
 class Scraper:
@@ -26,7 +26,8 @@ class Scraper:
         self.search_api_key = os.getenv("SEARCH_API_KEY")
         self.driver = self._setup_driver()
         self.documents: List[Document] = []
-        self.unique = {'.pdf', '.docx', '.csv', '.shp','.json', '.geojson' }
+        self.unique = {'.pdf', '.csv', '.json', '.geojson' }
+        self.ms_unique = {'.docx', '.doc', '.xlsx', '.xls'}
 
     def _setup_driver(self):
         options = Options()
@@ -68,24 +69,34 @@ class Scraper:
     def scrape_results(self, search_results=None):
         results = []
         if not search_results:
-            with open('outputs/20output.json', 'r', encoding='utf-8') as file:
+            with open('outputs/synthetic.json', 'r', encoding='utf-8') as file:
                 search_results = json.load(file)
 
         for result in search_results['results']:
             url = result.get('url')
-            if not url or url.endswith('pdf') or url.endswith('csv'):
+            if not url: 
                 continue
-
+            file_type = detect_file_type(url)
+            # if file is a ms office file, extract the actual url from the ms viewer application url
+            if file_type in self.ms_unique:
+                ms_url = extract_ms_office_link(url)
+                results.append(Document(page_content=result.get('title'), metadata={'url': ms_url, 'redirect_url': ms_url, 'file_type': file_type}))
+                continue
+            elif file_type in self.unique:
+                results.append(Document(page_content=result.get('title'), metadata={'url': url, 'redirect_url': url, 'file_type': file_type}))
+                continue
+            
+            # scrape webpages (remaining files)
             try:
                 article = Article(url)
                 article.download()
                 article.parse()
-                results.append(Document(page_content=article.text, metadata={'url': url, 'redirect_url': url}))
+                results.append(Document(page_content=article.text, metadata={'url': url, 'redirect_url': url, 'file_type': 'web'}))
             except Exception as e:
                 error_handler = ErrorHandler(url=url, error=e)
                 error_handler.run()
 
-            # Selenium parse internal links
+            # use selenium to get links within webpage
             try:
                 self.driver.get(url)
                 soup = BeautifulSoup(self.driver.page_source, 'html.parser')
@@ -100,7 +111,7 @@ class Scraper:
                     if redir_url in seen_links:
                         continue
                     seen_links.add(redir_url)
-                    soup_links.append(Document(page_content=a.get_text(strip=True), metadata={'redirect_url': redir_url, 'url': url}))
+                    soup_links.append(Document(page_content=a.get_text(strip=True), metadata={'redirect_url': redir_url, 'url': url, 'file_type': 'soup'}))
 
                 if soup_links:
                     suitable_urls = url_suitability_scoring(soup_links, self.query)
@@ -114,9 +125,9 @@ class Scraper:
     def download_and_parse_reports(self):
         for doc in self.documents:
             url = doc.metadata.get('redirect_url', '')
-            filetype = detect_file_type(url)
+            file_type = doc.metadata.get('file_type')
             # if the file is identified as non-conventional file type
-            if filetype in self.unique:
+            if file_type in self.unique or file_type in self.ms_unique:
                 try:
                     print(f"Downloading {url}")
                     download_file(url)
@@ -131,11 +142,13 @@ class Scraper:
         for doc in self.documents:
             redir_url = doc.metadata.get('redirect_url', '')
             base_url = doc.metadata.get('url', '')
+            file_type = doc.metadata.get('file_type', '')
 
             if redir_url in link_set:
                 continue
-
-            if redir_url == base_url or detect_file_type(redir_url) in self.unique:
+            
+            # if info has already been scrapped, no need to rescrape
+            if redir_url == base_url or file_type in self.unique or file_type in self.ms_unique:
                 filtered_docs.append(doc)
             else:
                 try:
@@ -146,6 +159,7 @@ class Scraper:
                     filtered_docs.append(doc)
                 except Exception as e:
                     print(f"Failed to scrape {redir_url}: {e}")
+                    print('Document is ', doc)
                     continue
 
             link_set.add(redir_url)

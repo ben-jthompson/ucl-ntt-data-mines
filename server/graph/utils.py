@@ -1,20 +1,31 @@
 import requests
-import mimetypes
+from urllib.parse import urlparse, parse_qs, unquote
 import os
 import fitz
 import docx
 import json
+import csv
 import pandas as pd
 import geopandas as gpd
+from spire.doc import Document as SpireDoc
 from langchain.schema import Document
+import subprocess
 
 # find file type for scraped documents
 def detect_file_type(url: str) -> str:
     # file type address stripping
     file_type = os.path.splitext(os.path.basename(url.split("?")[0]))[-1].lower()
-    if file_type in {'.pdf', '.docx', '.csv', '.shp', '.json', '.geojson'}:
+    if file_type in {'.pdf', '.csv', '.json', '.geojson', '.docx', '.doc', '.xlsx', '.xls'}:
         return file_type
     
+    # edge case for microsoft office viewer
+    parsed = urlparse(url)
+    if 'view.officeapps.live.com' in parsed.netloc:
+        actual_url = get_ms_office_url(parsed)
+        ext = os.path.splitext(actual_url)[1].lower()
+        if ext in {'.docx', '.doc', '.xlsx', '.xls'}:
+            return ext
+
     # fallback for different address
     try:
         response = requests.head(url, allow_redirects=True, timeout=5)
@@ -37,7 +48,7 @@ def detect_file_type(url: str) -> str:
 
 
 
-def download_file(url: str, save_dir="server/downloads"):
+def download_file(url: str, save_dir="server\downloads"):
     headers = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -55,7 +66,7 @@ def download_file(url: str, save_dir="server/downloads"):
     if response.status_code == 200:
         with open(filepath, 'wb') as f:
             f.write(response.content)
-        print(f"Downloaded: {filename}")
+        print(f"Downloaded: {filename} to {filepath}")
         return filepath
     else:
         print(f"Failed to download: {url}")
@@ -72,6 +83,32 @@ def document_to_dict(doc: Document) -> dict:
 def dict_to_document(dict: dict) -> Document:
     return Document(page_content=dict["page_content"], metadata=dict["metadata"])
 
+def extract_ms_office_link(path: str) -> str:
+    """If MS Office type file detected (.docx, .xlsx, .doc, .xls) - then extract the download link from the viewer url
+
+    Args:
+        path (str): web address of file
+
+    Returns:
+        str: correct download address for file
+    """
+    parsed = urlparse(path)
+    if 'view.officeapps.live.com' in parsed.netloc:
+        actual_url = get_ms_office_url(parsed)
+        return actual_url
+    else:
+        return path
+        
+            
+def get_ms_office_url(parsed: str) -> str:
+    query = parse_qs(parsed.query)
+    src = query.get('src')
+    if src:
+        actual_url = unquote(src[0])
+        return actual_url
+    else:
+        return None
+
 def extract_from_pdf(path: str, save_dir="server/downloads") -> str:
     filename = os.path.basename(path.split("?")[0])  
     filepath = os.path.join(save_dir, filename)
@@ -79,13 +116,39 @@ def extract_from_pdf(path: str, save_dir="server/downloads") -> str:
     return "\n\n".join(page.get_text() for page in file)
 
 def extract_from_docx(filepath: str) -> str:
+    print('Extracting from docx')
     file = docx.Document(filepath)
     paras = [para.text for para in file.paragraphs]
     return '\n\n'.join(paras)
 
+def extract_from_doc(filepath: str) -> str:
+    try:
+        spire_doc = SpireDoc()
+        spire_doc.LoadFromFile(filepath)
+        pdf_file = filepath[:-4] + '.pdf'
+        spire_doc.SaveToFile(pdf_file)
+        spire_doc.Close()
+        os.remove(filepath)
+        return extract_from_pdf(pdf_file)
+    except Exception as e:
+        print(f"Failed to extract .doc file {filepath}: {e}")
+        return
+
+def extract_from_excel(filepath: str) -> str:
+    spreadsheet = pd.ExcelFile(filepath)
+    data = []
+    for sheet in spreadsheet.sheet_names:
+        sheet_content = spreadsheet.parse(sheet)
+        sheet_csv = sheet_content.to_csv(index=False)
+        data.append(f"Sheet: {sheet}\n{sheet_csv}")
+        print(f"Sheet: {sheet}\n{sheet_csv}"[:250])
+    return '\n\n'.join(data)
+
 def extract_from_csv(filepath: str) -> str:
-    file = pd.read_csv(filepath)
-    return file.to_string(index=False)
+    with open(filepath, 'r', encoding='utf-8') as f:
+        data = f.read()
+        print(data[:250])
+    return data
 
 
 def extract_from_json(filepath: str) -> str:
@@ -103,7 +166,10 @@ def extract_from_shp(filepath: str) -> str:
 
 def extract_from_source(filepath: str, doc: Document, save_dir='server/downloads') -> Document:
     parsing_method = {'.pdf': extract_from_pdf, 
-                      '.docx': extract_from_docx, 
+                      '.docx': extract_from_docx,
+                      '.doc': extract_from_doc,
+                      '.xlsx': extract_from_excel,
+                      '.xls': extract_from_excel, 
                       '.csv': extract_from_csv, 
                       '.shp': extract_from_shp,
                       '.json': extract_from_json, 
@@ -119,6 +185,32 @@ def extract_from_source(filepath: str, doc: Document, save_dir='server/downloads
         if filepath.endswith(key):
             # edge case: if doc
             doc.page_content=func(filepath)
-            print('Page content for ', key, ' is ', doc.page_content[:100])
             return doc
+
+def strip_csv_metadata(filepath: str, min_columns=0) -> str:
+    with open(filepath, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    delimiter = csv.Sniffer().sniff(''.join(lines[:10])).delimiter  # auto-detect delimiter
+
+    # Find the first valid header row
+    header_idx = None
+    for i, line in enumerate(lines):
+        # Split using delimiter and strip whitespace
+        columns = [col.strip() for col in line.split(delimiter)]
+        if len(columns) >= min_columns and all(col != "" for col in columns[:2]):
+            header_idx = i
+            break
+
+    if header_idx is None:
+        raise ValueError("Could not detect valid CSV header row.")
+    print(f"Detected delimiter: {repr(delimiter)}")
+    print(f"Detected header row: {header_idx}")
+    print(f"Header preview: {lines[header_idx]}")
+
+    # Use pandas to read from the detected header row
+    df = pd.read_csv(filepath, skiprows=header_idx, delimiter=delimiter)
+    print(df[:10])
+    return df
+
 

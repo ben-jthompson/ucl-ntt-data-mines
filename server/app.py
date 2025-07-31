@@ -62,8 +62,7 @@ def delete_file():
     try:
         os.remove(filepath)
     except Exception as e:
-        print('xr')
-        return jsonify({"error": f"Failed to save file: {e}"}), 500
+        return jsonify({"error": f"Failed to delete file: {e}"}), 500
 
     return jsonify({"success": "File deleted successfully", "filename": file}), 200
 
