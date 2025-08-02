@@ -14,6 +14,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 
 import { useState, useEffect } from "react";
 import UploadWidget from "./UploadWidget";
+import axios from "axios";
 import dynamic from "next/dynamic";
 const ResultMap = dynamic(() => import("../../../components/ResultMap"), {
   ssr: false,
@@ -26,6 +27,19 @@ export default function Output({
   coords: [number, number];
   radius: number;
 }) {
+  useEffect(() => {
+    const client = localStorage.getItem("clientId");
+    axios
+      .post(`http://localhost:8080/api/clients/${client}/files/zip`, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((response) => {
+        console.log("Upload successful:", response.data);
+        // TODO add id assignment
+      });
+  });
   return (
     coords && (
       <>

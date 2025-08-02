@@ -9,14 +9,17 @@ import {
   InputLabel,
   FormControl,
   List,
-  ListItem,
-  ListItemText,
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Button,
   SelectChangeEvent,
 } from "@mui/material";
-import { useState } from "react";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useState, useEffect } from "react";
 import UploadWidget from "./UploadWidget";
 import dynamic from "next/dynamic";
+import axios from "axios";
 
 import { UploadedFile } from "@/types/UploadedFile";
 
@@ -25,12 +28,14 @@ const GeoMap = dynamic(() => import("../../../components/GeoMap"), {
 });
 
 export default function Setup({
+  coords,
   setCoords,
   radius,
   setRadius,
   uploadedFiles,
   setUploadedFiles,
 }: {
+  coords: [number, number] | null;
   setCoords: (coords: [number, number]) => void;
   radius: number;
   setRadius: (radius: number) => void;
@@ -51,6 +56,13 @@ export default function Setup({
   const handleRadiusChange = (event: SelectChangeEvent<number>) => {
     setRadius(event.target.value);
   };
+
+  useEffect(() => {
+    const client = localStorage.getItem("clientId");
+    axios
+      .get(`http://localhost:8080/api/clients/${client}/files`)
+      .then((res) => setUploadedFiles(res.data));
+  }, []);
 
   return (
     <Grid container spacing={6}>
@@ -116,13 +128,29 @@ export default function Setup({
               Uploaded Files
             </Typography>
             {uploadedFiles ? (
-              <List dense>
-                {uploadedFiles.map((file, index) => (
-                  <ListItem key={index}>
-                    <ListItemText primary={file.file_name} />
-                  </ListItem>
-                ))}
-              </List>
+              <Box sx={{ maxHeight: 200, overflow: "auto" }}>
+                <List dense>
+                  {uploadedFiles.map((file, index) => (
+                    <Accordion key={index}>
+                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography>
+                          {file.display_name || file.file_name}
+                        </Typography>
+                      </AccordionSummary>
+                      <AccordionDetails>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Description:</strong>{" "}
+                          {file.description || "No description provided"}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Tags:</strong>{" "}
+                          {file.tags?.length ? file.tags.join(", ") : "No tags"}
+                        </Typography>
+                      </AccordionDetails>
+                    </Accordion>
+                  ))}
+                </List>
+              </Box>
             ) : (
               <Typography>No files uploaded.</Typography>
             )}
@@ -159,15 +187,19 @@ export default function Setup({
             </Select>
           </FormControl>
 
-          <GeoMap onLocationSelected={setCoords} radius={radius} />
+          <GeoMap
+            coords={coords}
+            onLocationSelected={setCoords}
+            radius={radius}
+          />
         </Box>
       </Grid>
 
       <UploadWidget
         open={widget}
         handleClose={() => setWidget(false)}
-        onFilesUploaded={setUploadedFiles}
-        existingFiles={uploadedFiles}
+        setUploadedFiles={setUploadedFiles}
+        uploadedFiles={uploadedFiles}
       />
     </Grid>
   );

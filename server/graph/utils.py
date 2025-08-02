@@ -212,5 +212,3 @@ def strip_csv_metadata(filepath: str, min_columns=0) -> str:
     df = pd.read_csv(filepath, skiprows=header_idx, delimiter=delimiter)
     print(df[:10])
     return df
-
-

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import NextLink from "next/link";
 import {
@@ -10,6 +10,7 @@ import {
   Box,
   useTheme,
 } from "@mui/material";
+import { v4 as uuidv4 } from "uuid";
 
 const Header = () => {
   const pathname = usePathname();
@@ -20,6 +21,16 @@ const Header = () => {
     { href: "/reports", label: "Reports" },
     { href: "/map", label: "Map" },
   ];
+
+  useEffect(() => {
+    let clientId = localStorage.getItem("clientId");
+
+    if (!clientId) {
+      // if this is first visit
+      clientId = uuidv4();
+      localStorage.setItem("clientId", clientId);
+    }
+  });
 
   return (
     <AppBar position="sticky" color="default" elevation={4}>

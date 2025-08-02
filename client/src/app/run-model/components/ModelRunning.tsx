@@ -37,7 +37,7 @@ export default function ModelRunning({
 
     if (encodedLocation && encodedQuery) {
       const eventSource = new EventSource(
-        `http://localhost:8080/api/run_pipeline?location=${encodedLocation}&query=${encodedQuery}`
+        `http://localhost:8080/api/pipeline?location=${encodedLocation}&query=${encodedQuery}`
       );
       eventSource.onmessage = function (event) {
         console.log("Message:", event.data);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Box,
   Container,
@@ -61,7 +61,7 @@ export default function RunModel() {
       // case 1:
       // TODO: wait for loading before allowing
       case 2:
-        return status == true;
+        return true;
       // case 3:
       default:
         return true;
@@ -89,6 +89,7 @@ export default function RunModel() {
       case 0:
         return (
           <Setup
+            coords={coords}
             setCoords={setCoords}
             radius={radius}
             setRadius={setRadius}

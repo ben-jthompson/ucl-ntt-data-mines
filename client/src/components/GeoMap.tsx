@@ -85,15 +85,19 @@ function LegendControl({
 }
 
 function LocationMarker({
+  defaultLocation,
   onSelect,
   radius,
   bound,
 }: {
+  defaultLocation: [number, number] | null;
   onSelect: (coords: [number, number]) => void;
   radius: number;
   bound: FeatureCollection | null;
 }) {
-  const [position, setPosition] = useState<[number, number] | null>(null);
+  const [position, setPosition] = useState<[number, number] | null>(
+    defaultLocation
+  );
   useMapEvents({
     click(e: any) {
       if (!bound) return;
@@ -173,9 +177,11 @@ function LayerToggleBar({
 // }, [mineEntries]);
 
 export default function GeoMap({
+  coords,
   onLocationSelected,
   radius,
 }: {
+  coords: [number, number] | null;
   onLocationSelected: (coords: [number, number]) => void;
   radius: number;
 }) {
@@ -270,6 +276,7 @@ export default function GeoMap({
             />
 
             <LocationMarker
+              defaultLocation={coords}
               onSelect={onLocationSelected}
               radius={radius}
               bound={mineExtent}

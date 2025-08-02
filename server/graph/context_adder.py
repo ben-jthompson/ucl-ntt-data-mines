@@ -6,7 +6,7 @@ class ContextAdder:
         self.tag = tag
 
     # find the documents uploaded by the user which are relevant
-    # TODO join up with UploadedDoc file type
+    # TODO join up with UploadedDoc file type - props:
     def find_tagged_files(self, uploaded_docs):
         relevant_docs = [Document(page_content=doc.file_name, 
                                   metadata={'url': doc.file_path, 

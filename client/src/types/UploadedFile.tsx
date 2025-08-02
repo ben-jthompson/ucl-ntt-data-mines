@@ -1,5 +1,7 @@
 export type UploadedFile = {
   file_name: string;
+  display_name: string;
   description?: string;
-  id?: number;
+  id: string;
+  tags?: string[];
 };

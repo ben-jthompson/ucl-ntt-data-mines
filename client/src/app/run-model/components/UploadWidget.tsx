@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -7,14 +7,22 @@ import {
   Button,
   Box,
   Typography,
+  Checkbox,
   List,
   ListItem,
-  ListItemText,
   IconButton,
   Input,
   TextField,
+  OutlinedInput,
+  InputLabel,
+  MenuItem,
+  FormControl,
+  ListItemText,
+  Select,
+  SelectChangeEvent,
 } from "@mui/material";
 import Delete from "@mui/icons-material/Delete";
+import { v4 as uuidv4 } from "uuid";
 
 import axios from "axios";
 import { UploadedFile } from "@/types/UploadedFile";
@@ -22,37 +30,74 @@ import { UploadedFile } from "@/types/UploadedFile";
 type UploadWidgetProps = {
   open: boolean;
   handleClose: () => void;
-  onFilesUploaded: (files: UploadedFile[]) => void;
-  existingFiles: UploadedFile[] | null;
+  setUploadedFiles: (files: UploadedFile[]) => void;
+  uploadedFiles: UploadedFile[] | null;
 };
 
 export default function UploadWidget({
   open,
   handleClose,
-  onFilesUploaded,
-  existingFiles,
+  setUploadedFiles,
+  uploadedFiles,
 }: UploadWidgetProps) {
-  const [localFiles, setLocalFiles] = useState<UploadedFile[] | null>(
-    existingFiles
-  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
+  const [tags, setTags] = useState<string[] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const availableTags = [
+    "Area Demographics",
+    "Hazard Risk",
+    "Socioeconomic Statistics",
+    "Local Authority Activity",
+    "Local Sentiment",
+    "Mine Conditions",
+    "Mine Data",
+    "Groundwater Data",
+    "Budget and Timeline Plans",
+  ];
+  const ITEM_HEIGHT = 48;
+  const ITEM_PADDING_TOP = 8;
+  const MenuProps = {
+    PaperProps: {
+      style: {
+        maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+        width: 250,
+      },
+    },
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("File selected");
     if (event.target.files && event.target.files.length > 0) {
       setSelectedFile(event.target.files[0]);
       setDescription("");
+      setTags(null);
     }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleTagChange = (event: SelectChangeEvent<string[]>) => {
+    const {
+      target: { value },
+    } = event;
+
+    setTags(typeof value === "string" ? value.split(",") : value);
   };
 
   const handleFileUpload = (event: React.MouseEvent) => {
     if (!selectedFile) return;
-
+    const selectedFileId = uuidv4();
     const formData = new FormData();
+    const client = localStorage.getItem("clientId") ?? "unknown";
     formData.append("file", selectedFile);
+    formData.append("id", selectedFileId);
+    formData.append("description", description ?? "");
+    formData.append("tags", tags ? tags.join(", ") : "");
 
     axios
-      .post("http://localhost:8080/api/upload", formData, {
+      .post(`http://localhost:8080/api/clients/${client}/files`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -60,52 +105,78 @@ export default function UploadWidget({
       .then((response) => {
         console.log("Upload successful:", response.data);
         // TODO add id assignment
-        var updated = localFiles ?? [];
-        if (localFiles) {
-          updated = [
-            ...localFiles,
+        if (uploadedFiles) {
+          setUploadedFiles([
+            ...uploadedFiles,
             {
-              file_name: selectedFile.name,
+              file_name: response.data.filename,
+              display_name: selectedFile.name,
               description: description,
-              id: 3,
+              id: selectedFileId,
+              tags: tags ?? undefined,
             },
-          ];
+          ]);
         } else {
-          updated = [
+          setUploadedFiles([
             {
-              file_name: selectedFile.name,
+              file_name: response.data.filename,
+              display_name: selectedFile.name,
               description: description,
-              id: 3,
+              id: selectedFileId,
+              tags: tags ?? undefined,
             },
-          ];
+          ]);
         }
-        setLocalFiles(updated);
-        onFilesUploaded(updated);
         setSelectedFile(null);
         setDescription("");
+        setTags(null);
       })
       .catch((error) => {
-        console.error("Upload error:", error);
-        if (error.response.data.error === "File type invalid")
-          alert("Please select a valid file.");
-      });
-  };
-
-  const handleFileRemove = (filename: string) => {
-    axios
-      .post("http://localhost:8080/api/delete", { file: filename })
-      .then((response) => {
-        console.log("Delete successful:", response.data);
-        var updated = localFiles ?? [];
-        if (localFiles) {
-          updated = localFiles.filter((doc) => doc.file_name !== filename);
+        if (error.response) {
+          if (error.response.data.error === "Invalid file type") {
+            alert("Please select a valid file (file type not supported).");
+          } else if (error.response.status === 409) {
+            alert(
+              "File under the same name has already been uploaded. Please rename or select another file."
+            );
+          }
+        } else {
+          console.error("Upload error:", error);
         }
-        setLocalFiles(updated);
-        onFilesUploaded(updated);
       });
   };
 
+  const handleFileRemove = (file: UploadedFile) => {
+    const client = localStorage.getItem("clientId") ?? "unknown";
+    axios
+      .delete(`http://localhost:8080/api/clients/${client}/files/${file.id}`, {
+        data: {
+          file: file.file_name,
+        },
+      })
+      .then((response) => {
+        if (uploadedFiles) {
+          setUploadedFiles(
+            uploadedFiles.filter(
+              (doc) => doc.id.trim() !== response.data.id.trim()
+            )
+          );
+        }
+      })
+      .catch((error) => {
+        if (error.response) {
+          if (error.response.status === 500) {
+            alert("Failed to delete file: " + error.response.data.error);
+          }
+        } else {
+          alert("Delete failed: Network or server error");
+        }
+      });
+  };
   const handleDialogClose = () => {
+    setSelectedFile(null);
+    setDescription("");
+    setTags(null);
     handleClose();
   };
 
@@ -119,8 +190,9 @@ export default function UploadWidget({
             <input
               type="file"
               onChange={handleFileSelect}
-              accept=".docx,.xml,.shp,.pdf"
+              accept=".docx, .doc, .xls, .xlsx, .json, .geojson, .geo.json, .pdf"
               style={{ display: "none" }}
+              ref={fileInputRef}
             />
           </Button>
           <Typography variant="body2" color="secondary">
@@ -129,16 +201,48 @@ export default function UploadWidget({
           {selectedFile && (
             <>
               <Typography variant="body1">
-                Selected file: <strong>{selectedFile.name}</strong>
+                Selected file: <strong>{selectedFile?.name}</strong>
               </Typography>
+
               <TextField
                 label="File Description"
                 variant="outlined"
                 fullWidth
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                sx={{ my: 2 }}
               />
-              <Button variant="contained" onClick={handleFileUpload}>
+
+              <FormControl sx={{ m: 1, width: 300 }}>
+                <InputLabel id="tag-select-label">
+                  Tag (select any that apply)
+                </InputLabel>
+                <Select
+                  labelId="tag-select-label"
+                  id="tag-select"
+                  multiple
+                  value={tags ?? []}
+                  onChange={handleTagChange}
+                  input={<OutlinedInput label="Tag" />}
+                  renderValue={(selected) => selected.join(", ")}
+                  MenuProps={MenuProps}
+                >
+                  {availableTags.map((availableTag) => (
+                    <MenuItem key={availableTag} value={availableTag}>
+                      <Checkbox
+                        checked={tags ? tags.includes(availableTag) : false}
+                      />
+                      <ListItemText primary={availableTag} />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Button
+                variant="contained"
+                onClick={handleFileUpload}
+                sx={{ mt: 2 }}
+              >
                 Submit
               </Button>
             </>
@@ -149,21 +253,21 @@ export default function UploadWidget({
           <Typography variant="subtitle1" gutterBottom>
             Uploaded Files
           </Typography>
-          {localFiles ? (
+          {uploadedFiles ? (
             <List dense>
-              {localFiles.map((file, index) => (
+              {uploadedFiles.map((file, index) => (
                 <ListItem
                   key={index}
                   secondaryAction={
                     <IconButton
                       edge="end"
-                      onClick={() => handleFileRemove(file.file_name)}
+                      onClick={() => handleFileRemove(file)}
                     >
                       <Delete />
                     </IconButton>
                   }
                 >
-                  <ListItemText primary={file.file_name} />
+                  <ListItemText primary={file.display_name} />
                 </ListItem>
               ))}
             </List>
