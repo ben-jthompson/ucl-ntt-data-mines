@@ -33,7 +33,7 @@ export default function RunModel() {
   const steps = ["Setup", "Context Validation", "Model Running", "Output"];
 
   const [activeStep, setActiveStep] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,9 +57,10 @@ export default function RunModel() {
   const isStepValid = () => {
     switch (activeStep) {
       case 0:
-        return coords != null;
-      // case 1:
-      // TODO: wait for loading before allowing
+        return coords != null && loading == false;
+      case 1:
+        // TODO: wait for loading before allowing
+        return loading == false;
       case 2:
         return true;
       // case 3:
@@ -89,6 +90,8 @@ export default function RunModel() {
       case 0:
         return (
           <Setup
+            loading={loading}
+            setLoading={setLoading}
             coords={coords}
             setCoords={setCoords}
             radius={radius}
@@ -101,6 +104,8 @@ export default function RunModel() {
         return (
           coords && (
             <ContextValidation
+              loading={loading}
+              setLoading={setLoading}
               coords={coords}
               radius={radius}
               model={model}
@@ -124,17 +129,17 @@ export default function RunModel() {
     }
   };
 
-  if (loading) {
-    console.log("[Registration Page] Rendering loading state");
-    return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <CircularProgress />
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          Loading your information...
-        </Typography>
-      </Container>
-    );
-  }
+  // if (loading) {
+  //   console.log("[Registration Page] Rendering loading state");
+  //   return (
+  //     <Container maxWidth="md" sx={{ py: 4 }}>
+  //       <CircularProgress />
+  //       <Typography variant="h6" sx={{ mt: 2 }}>
+  //         Loading your information...
+  //       </Typography>
+  //     </Container>
+  //   );
+  // }
 
   // console.log("[Registration Page] Rendering main content");
   return (

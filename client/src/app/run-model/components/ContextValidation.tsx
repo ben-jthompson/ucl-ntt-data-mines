@@ -22,6 +22,8 @@ const ResultMap = dynamic(() => import("../../../components/ResultMap"), {
 });
 
 export default function ContextValidation({
+  loading,
+  setLoading,
   coords,
   radius,
   model,
@@ -29,6 +31,8 @@ export default function ContextValidation({
   setLocation,
   uploadedFiles,
 }: {
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
   coords: [number, number];
   radius: number;
   model: {};
@@ -66,6 +70,7 @@ export default function ContextValidation({
 
   const apiUrl = `https://nominatim.openstreetmap.org/reverse?lat=${coords[0]}&lon=${coords[1]}&format=json`;
   useEffect(() => {
+    setLoading(true);
     axios.get(apiUrl).then((res) => {
       const data = res.data;
       setAreaDescription({
@@ -93,6 +98,7 @@ export default function ContextValidation({
           data.address.county ||
           "UK"
       );
+      setLoading(false);
     });
   }, []);
 
@@ -129,17 +135,39 @@ export default function ContextValidation({
                   p: 1,
                 }}
               >
-                {uploadedFiles.map((file, ind) => (
-                  <Accordion key={file.file_name}>
+                {uploadedFiles.map((file) => (
+                  <Accordion
+                    key={file.file_name}
+                    sx={{ mb: 1, borderRadius: 2, boxShadow: 1 }}
+                  >
                     <AccordionSummary
                       expandIcon={<ArrowDropDownIcon />}
-                      aria-controls="panel1-content"
-                      id={file.file_name}
+                      aria-controls={`${file.file_name}-content`}
+                      id={`${file.file_name}-header`}
                     >
-                      <Typography component="span">{file.file_name}</Typography>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {file.display_name}
+                      </Typography>
                     </AccordionSummary>
+
                     <AccordionDetails>
-                      <Typography>{file.description}</Typography>
+                      <Box
+                        sx={{
+                          backgroundColor: "background.default",
+
+                          p: 2,
+                          borderRadius: 1,
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Description:</strong>{" "}
+                          {file.description || "No description provided"}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Tags:</strong>{" "}
+                          {file.tags?.length ? file.tags.join(", ") : "No tags"}
+                        </Typography>
+                      </Box>
                     </AccordionDetails>
                   </Accordion>
                 ))}
@@ -201,16 +229,22 @@ export default function ContextValidation({
           }}
         >
           <ResultMap coords={coords} radius={radius} result={false} />
-          {areaDescription.locality ? (
-            <Typography>
-              Searching in this area: {areaDescription.locality}
-            </Typography>
-          ) : (
-            <Typography>
-              Searching in this area: {areaDescription.county}
-            </Typography>
+          {!loading && (
+            <Box>
+              {areaDescription.locality ? (
+                <Typography>
+                  Searching in this area: {areaDescription.locality}
+                </Typography>
+              ) : (
+                <Typography>
+                  Searching in this area: {areaDescription.county}
+                </Typography>
+              )}
+              <Typography>
+                Full address: {areaDescription.fullAddress}
+              </Typography>
+            </Box>
           )}
-          <Typography>{areaDescription.fullAddress}</Typography>
         </Box>
       </Grid>
     </Grid>

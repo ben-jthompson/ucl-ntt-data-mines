@@ -17,6 +17,7 @@ import {
   InputLabel,
   MenuItem,
   FormControl,
+  FormHelperText,
   ListItemText,
   Select,
   SelectChangeEvent,
@@ -196,7 +197,8 @@ export default function UploadWidget({
             />
           </Button>
           <Typography variant="body2" color="secondary">
-            Supported inputs: .pdf, .docx, .csv, .json, .geojson, .geo.json
+            Supported inputs: .pdf, .docx, .doc, .xlsx, .xls, .csv, .json,
+            .geojson
           </Typography>
           {selectedFile && (
             <>
@@ -214,9 +216,7 @@ export default function UploadWidget({
               />
 
               <FormControl sx={{ m: 1, width: 300 }}>
-                <InputLabel id="tag-select-label">
-                  Tag (select any that apply)
-                </InputLabel>
+                <InputLabel id="tag-select-label">Tag</InputLabel>
                 <Select
                   labelId="tag-select-label"
                   id="tag-select"
@@ -236,6 +236,7 @@ export default function UploadWidget({
                     </MenuItem>
                   ))}
                 </Select>
+                <FormHelperText>Select any that apply</FormHelperText>
               </FormControl>
 
               <Button

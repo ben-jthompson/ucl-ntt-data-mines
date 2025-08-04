@@ -27,6 +27,7 @@ import { point } from "@turf/helpers";
 import axios from "axios";
 import { FeatureLayer } from "../types/FeatureLayer";
 import { addLayer } from "@/utilities/AddLayer";
+import { isInsideBound } from "@/utilities/IsInsideBound";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 
 // Apply default marker
@@ -85,55 +86,37 @@ function LegendControl({
 }
 
 function LocationMarker({
-  defaultLocation,
+  coords,
   onSelect,
   radius,
   bound,
 }: {
-  defaultLocation: [number, number] | null;
+  coords: [number, number] | null;
   onSelect: (coords: [number, number]) => void;
   radius: number;
   bound: FeatureCollection | null;
 }) {
-  const [position, setPosition] = useState<[number, number] | null>(
-    defaultLocation
-  );
   useMapEvents({
     click(e: any) {
       if (!bound) return;
-      const pt = point([e.latlng.lng, e.latlng.lat]); // note lng, lat order
-      const isInsideAnyPolygon = bound.features.some((feature) => {
-        if (
-          feature.geometry.type === "Polygon" ||
-          feature.geometry.type === "MultiPolygon"
-        ) {
-          return booleanPointInPolygon(
-            pt,
-            feature as Feature<Polygon | MultiPolygon>
-          );
-        }
-        return false;
-      });
-
-      if (isInsideAnyPolygon) {
-        const coords: [number, number] = [e.latlng.lat, e.latlng.lng];
-        setPosition(coords);
-        onSelect(coords);
+      const pt: [number, number] = [e.latlng.lat, e.latlng.lng];
+      if (isInsideBound({ coords: pt, bound })) {
+        onSelect(pt);
       } else {
         alert("Please select a location within mine extent.");
       }
     },
   });
 
-  return position ? (
+  return coords ? (
     <>
-      <Marker position={position}>
+      <Marker position={coords}>
         <Popup>
-          lat: {Math.round(position[0] * 10000) / 10000}; lng:{" "}
-          {Math.round(position[1] * 10000) / 10000}
+          lat: {Math.round(coords[0] * 10000) / 10000}; lng:{" "}
+          {Math.round(coords[1] * 10000) / 10000}
         </Popup>
       </Marker>
-      <Circle center={position} radius={radius} />
+      <Circle center={coords} radius={radius} />
     </>
   ) : null;
 }
@@ -163,19 +146,6 @@ function LayerToggleBar({
   );
 }
 
-// Memoize markers array
-// const markers = useMemo(() => {
-//   return mineEntries?.features.map((feature) => {
-//     const coords = feature.geometry.coordinates;
-//     return (
-//       <CircleMarker
-//         key={feature.properties?.id}
-//         center={[coords[1], coords[0]]}
-//       />
-//     );
-//   });
-// }, [mineEntries]);
-
 export default function GeoMap({
   coords,
   onLocationSelected,
@@ -185,6 +155,9 @@ export default function GeoMap({
   onLocationSelected: (coords: [number, number]) => void;
   radius: number;
 }) {
+  const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(
+    coords
+  );
   const [layers, setLayers] = useState<FeatureLayer[] | null>(null);
   const [UKBound, setUKBound] = useState<FeatureCollection | null>(null);
   const [mineExtent, setMineExtent] = useState<FeatureCollection | null>(null);
@@ -276,7 +249,7 @@ export default function GeoMap({
             />
 
             <LocationMarker
-              defaultLocation={coords}
+              coords={coords}
               onSelect={onLocationSelected}
               radius={radius}
               bound={mineExtent}

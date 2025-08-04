@@ -82,13 +82,14 @@ def delete_file(client_id, file_id):
 def get_uploaded_files(client_id):
     upload_folder = os.path.join("server/uploads", client_id)
     if not os.path.exists(upload_folder):
-        return jsonify([])
+        return jsonify({"success":"no files to retrieve"}), 200
 
     uploaded_files = []
     for filename in os.listdir(upload_folder):
         if filename.endswith(".meta.json"):
             continue
         meta_path = os.path.join(upload_folder, f"{filename}.meta.json")
+        tag_list = None
         try:
             with open(meta_path, 'r', encoding='utf-8') as f:
                 metadata = json.load(f)
@@ -109,7 +110,7 @@ def get_uploaded_files(client_id):
             "id": metadata.get("id"),
             "tags": tag_list
         })
-    return jsonify(uploaded_files), 200
+    return jsonify({"success":"files retrieved successfully", "files": uploaded_files}), 200
 
 @app.route("/api/clients/<client_id>/files/zip", methods=["POST"])
 def zip_uploaded_files(client_id):
@@ -135,8 +136,9 @@ def get_geojson(filename):
         return jsonify({"error": "File not found"}), 404
 
 
-@app.route("/api/pipeline", methods=["POST"])
+@app.route("/api/pipeline", methods=["GET"])
 def run_pipeline():
+    
     location = request.args.get("location")
     query = request.args.get("query")
     pipeline = Pipeline(location, query)
