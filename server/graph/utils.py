@@ -178,7 +178,7 @@ def extract_from_source(filepath: str, doc: Document, save_dir='server/downloads
     if save_dir == 'server/downloads':
         filename = os.path.basename(filepath.split("?")[0])  
         filepath = os.path.join(save_dir, filename)
-    # else document has been uploaded by user, so filepath is okay
+    # else document has been uploaded by user, so filepath added in the arg is okay
 
     # iterate through keys to find appropriate extraction method
     for key, func in parsing_method.items():

@@ -23,10 +23,12 @@ const ResultMap = dynamic(() => import("../../../components/ResultMap"), {
 
 export default function ModelRunning({
   location,
-  query = "Mine Water Heat Reuse Opportunities Local Council",
+  query = "Gravitational Energy",
+  coords,
 }: {
   location: string | undefined;
   query: string;
+  coords: [number, number];
 }) {
   useEffect(() => {
     var encodedLocation = null;
@@ -34,10 +36,14 @@ export default function ModelRunning({
       encodedLocation = encodeURIComponent(location);
     }
     const encodedQuery = encodeURIComponent(query.trim());
+    const encodedTag = encodeURIComponent("Area Demographics");
+    const client = localStorage.getItem("clientId");
+    const encodedClientId = encodeURIComponent(client || "");
+    const encodedCoords = encodeURIComponent(coords.join(" "));
 
     if (encodedLocation && encodedQuery) {
       const eventSource = new EventSource(
-        `http://localhost:8080/api/pipeline?location=${encodedLocation}&query=${encodedQuery}`
+        `http://localhost:8080/api/pipeline?location=${encodedLocation}&query=${encodedQuery}&tag=${encodedTag}&client_id=${encodedClientId}&coords=${encodedCoords}`
       );
       eventSource.onmessage = function (event) {
         console.log("Message:", event.data);

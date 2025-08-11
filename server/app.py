@@ -51,8 +51,7 @@ def upload_file(client_id):
 
     return jsonify({"success": True, "filename": file_name}), 201
 
-@limiter.limit('1 per minute')
-@app.route("/api/clients/<client_id>/files/<file_id>", methods=["OPTIONS", "DELETE"])
+@app.route("/api/clients/<client_id>/files/<file_id>", methods=["DELETE"])
 def delete_file(client_id, file_id):
     if request.method == "OPTIONS":
         # Handle preflight request
@@ -141,18 +140,24 @@ def run_pipeline():
     
     location = request.args.get("location")
     query = request.args.get("query")
-    pipeline = Pipeline(location, query)
+    tag = request.args.get("tag")
+    client_id = request.args.get("client_id")
+    print('Query: ', query)
+    pipeline = Pipeline(location, query, tag, client_id)
 
     def generate():
         yield f"data: Starting pipeline for query: {query}\n\n"
         time.sleep(2)
-        yield "data: Scraping documents...\n\n"
-        pipeline.scrape()
+        # yield "data: Scraping documents...\n\n"
+        # pipeline.scrape()
+        yield "data: Adding your documents...\n\n"
+        pipeline.add_context()
         yield "data: Embedding documents...\n\n"
         pipeline.embed()
         yield "data: Querying LLM...\n\n"
         result = pipeline.query_llm()
         yield f"data: DONE: {result}\n\n"
+        yield "data: DONE\n\n"
 
     return Response(stream_with_context(generate()), content_type='text/event-stream')
 

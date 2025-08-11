@@ -28,10 +28,9 @@ def make_chroma_db(documents: List[Document], query: str) -> VectorStoreRetrieve
 
 
     documents_split = text_splitter.split_documents(documents)
-
     vectordb = Chroma.from_documents(documents=documents_split,
                           embedding=embeddings,
-                          collection_name=f'{query.lower()}-suitability',
+                          collection_name=f'{query.lower().replace(" ", "-")}-suitability',
                           persist_directory=persist_dir)
     retriever = vectordb.as_retriever(
     search_type="similarity",

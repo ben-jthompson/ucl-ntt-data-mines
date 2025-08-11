@@ -116,11 +116,19 @@ export default function RunModel() {
           )
         );
       case 2:
-        return (
+        return coords ? (
           <ModelRunning
             location={location}
-            query={location + " Mine Water Heat Reuse Local Authority"}
+            query={"Gravitational Energy"}
+            coords={coords}
           />
+        ) : (
+          <Container maxWidth="md" sx={{ py: 4 }}>
+            <CircularProgress />
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              Something went wrong. Please reload the page and retry.
+            </Typography>
+          </Container>
         );
       case 3:
         return coords && <Output coords={coords} radius={radius} />;
