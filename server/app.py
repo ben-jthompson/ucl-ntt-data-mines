@@ -5,7 +5,7 @@ import time
 import json
 import shutil
 from flask_limiter import Limiter
-from server.graph.pipeline import Pipeline
+from server.querying_graph.pipeline import Pipeline
 from server.utils import make_file_path, undo_file_path
 
 app = Flask(__name__)

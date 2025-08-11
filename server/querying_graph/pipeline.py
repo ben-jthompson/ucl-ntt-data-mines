@@ -1,7 +1,7 @@
 from .scraper import Scraper
 from .querier import Querier
 from .context_adder import ContextAdder
-from .data_pipeline import DataPipeline
+from ..data_graph.data_pipeline_funcs import DataPipeline
 from .chroma_funcs import make_chroma_db
 from .utils import dict_to_document
 import json

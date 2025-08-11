@@ -1,15 +1,16 @@
-from server.graph.utils import extract_from_source, dict_to_document
+from server.querying_graph.utils import extract_from_source, dict_to_document
 from langchain.schema import Document
 import os
 import json
 
 class ContextAdder:
-    def __init__(self, tag):
+    def __init__(self, tag, client_id):
         self.tag = tag
+        self.client_id = client_id
 
     # find the documents uploaded by the user which are relevant
-    def get_uploaded_files(self, client_id):
-        upload_dir = os.path.join(os.getcwd(), 'server/uploads', client_id)
+    def get_uploaded_files(self):
+        upload_dir = os.path.join(os.getcwd(), 'server/uploads', self.client_id)
         uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir)]
         return uploaded_files
 
@@ -34,8 +35,8 @@ class ContextAdder:
         document_returned =  extract_from_source(filepath=doc.metadata.get('url'), doc=doc, save_dir='server/uploads')
         return document_returned
     
-    def run(self, client_id):
-        files = self.get_uploaded_files(client_id)
+    def run(self):
+        files = self.get_uploaded_files()
         relevant_files = self.find_tagged_files(files)
         return relevant_files
 

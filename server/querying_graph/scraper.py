@@ -13,9 +13,9 @@ from langchain_community.tools import DuckDuckGoSearchResults
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-from server.graph.chroma_funcs import url_suitability_scoring
-from server.graph.utils import download_file, extract_from_source, document_to_dict, dict_to_document, detect_file_type, extract_ms_office_link
-from server.graph.error_handler_class import ErrorHandler
+from server.querying_graph.chroma_funcs import url_suitability_scoring
+from server.querying_graph.utils import download_file, extract_from_source, document_to_dict, dict_to_document, detect_file_type, extract_ms_office_link
+from server.querying_graph.error_handler_class import ErrorHandler
 
 class Scraper:
     def __init__(self, location: str, query: str):
