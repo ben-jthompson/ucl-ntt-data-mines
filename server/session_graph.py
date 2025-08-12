@@ -2,20 +2,21 @@ from langgraph.graph import StateGraph
 from typing import TypedDict, List, Dict
 from .querying_graph.pipeline_graph import build_pipeline_graph
 from .data_graph.data_pipeline_graph import build_data_pipeline_graph
+from .data_graph.data_pipeline_funcs import get_local_authority
 
 
 # state for all queries
 class SessionState(TypedDict):
     client_id: str
     location: str
-    region: str
+    region: List[Dict]
     coords: tuple
+    buffer: int
     queries: List[Dict] 
     report_sections: List
 
 def run_spatial_operations(state: SessionState) -> SessionState:
-    dp = DataPipeline(state["coords"])
-    state['region'] = dp.get_local_authority()
+    state['region'] = get_local_authority(state['coords'], state['buffer'])
     data_query_pipeline = build_data_pipeline_graph()
 
 
