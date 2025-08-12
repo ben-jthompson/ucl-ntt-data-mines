@@ -5,6 +5,7 @@ from .cooling_feasibility import CoolingFeasibility
 
 class DataPipelineState(TypedDict):
     coords: tuple
+    buffer: int
     region: str
     suitability: Dict
 
@@ -15,7 +16,8 @@ def region_node(state: DataPipelineState) -> DataPipelineState:
     return state
 
 def cooling_node(state: DataPipelineState) -> DataPipelineState:
-    cooler = CoolingFeasibility(state['coords'])
+    cooler = CoolingFeasibility(state['coords'], state['buffer'])
+    cooler.get_aquifer_status()
 
 def build_data_pipeline_graph():
     graph = StateGraph(DataPipelineState)
@@ -27,5 +29,4 @@ def build_data_pipeline_graph():
 
     pipeline = graph.compile()
     return pipeline
-    return graph.compile()
 

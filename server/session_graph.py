@@ -19,6 +19,14 @@ def run_spatial_operations(state: SessionState) -> SessionState:
     state['region'] = get_local_authority(state['coords'], state['buffer'])
     data_query_pipeline = build_data_pipeline_graph()
 
+    data_pipeline_state = {
+            "coords": state["coords"],
+            "buffer": state["buffer"],
+            "region": state['region'],
+            "suitability": {}
+        }
+    data_feasibility = data_query_pipeline.invoke(data_pipeline_state)
+
 
 def run_all_queries(state: SessionState) -> SessionState:
     query_pipeline = build_pipeline_graph()
