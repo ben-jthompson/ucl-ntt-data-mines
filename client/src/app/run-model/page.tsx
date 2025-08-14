@@ -121,6 +121,7 @@ export default function RunModel() {
             location={location}
             query={"Gravitational Energy"}
             coords={coords}
+            buffer={radius}
           />
         ) : (
           <Container maxWidth="md" sx={{ py: 4 }}>

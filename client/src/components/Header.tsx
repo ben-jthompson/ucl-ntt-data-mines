@@ -49,7 +49,7 @@ const Header = () => {
               "&:hover": { color: theme.palette.primary.dark },
             }}
           >
-            Data Center Suitability Tool
+            Data Center Suitability
           </Typography>
 
           {/* Navigation Links */}

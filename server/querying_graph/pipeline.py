@@ -1,7 +1,7 @@
 from .scraper import Scraper
 from .querier import Querier
 from .context_adder import ContextAdder
-from ..data_graph.data_pipeline_funcs import DataPipeline
+from ..data_graph.data_pipeline_funcs import get_local_authority
 from .chroma_funcs import make_chroma_db
 from .utils import dict_to_document
 import json
@@ -15,13 +15,12 @@ class Pipeline:
         self.coords = coords
         # TODO readd
         # self.scraper = Scraper(self.location, self.query)
-        self.context_adder = ContextAdder(self.tag)
+        self.context_adder = ContextAdder(self.tag, self.client_id)
         self.retriever = None
         self.docs = []
 
     def data_pipeline(self):
-        data_pipeline = DataPipeline(self.coords)
-        self.location = data_pipeline.get_local_authority()
+        self.location = get_local_authority(self.coords)
 
     def scrape(self):
         self.docs = self.scraper.run()
@@ -40,13 +39,13 @@ class Pipeline:
         
     
     def query_llm(self):
-        querier = Querier(self.retriever, self.query)
-        # querier.get_queries()
-        response = querier.run()
-        return response
-        # with open('gpt-4o-mini-multiquery-output.txt', "r", encoding="utf-8") as f:
-        #     data=f.read()
-        # return data
+        # querier = Querier(self.retriever, self.query)
+        # # querier.get_queries()
+        # response = querier.run()
+        # return response
+        with open('gpt-4o-mini-multiquery-output.txt', "r", encoding="utf-8") as f:
+            data=f.read()
+        return data
         
 
     def run(self):

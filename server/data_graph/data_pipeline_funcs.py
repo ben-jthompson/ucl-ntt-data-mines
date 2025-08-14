@@ -10,7 +10,7 @@ def get_local_authority(coords, buffer):
     point = Point(coords[1], coords[0])
     coords_point = GeoDataFrame(geometry=[point], crs='EPSG:4326').to_crs('EPSG:27700')
     coords_buffered = GeoDataFrame(
-    geometry=coords_point.buffer(buffer),
+    geometry=coords_point.buffer(float(buffer)),
     crs=coords_point.crs
 )
     # TODO serve data from github

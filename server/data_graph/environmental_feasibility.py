@@ -10,9 +10,10 @@ class EnvironmentalFeasibility:
         self.buffer = buffer
         self.point_gdf = gpd.GeoDataFrame(geometry=[self.point], crs='EPSG:4326').to_crs('EPSG:27700')
         self.buffered_gdf = gpd.GeoDataFrame(
-            geometry=self.point_gdf.buffer(buffer),
+            geometry=self.point_gdf.buffer(float(buffer)),
             crs=self.point_gdf.crs
         )
+        
 
     def get_flood_risk(self):
         flood_risk_map = read_and_convert_geojson_file('data/geojson/Flood_Risk_Areas.json')
@@ -25,26 +26,26 @@ class EnvironmentalFeasibility:
         output = {'topic':'Flooding', 'risk': None, 'explanation': None}
         authority = {'Rivers and Sea': 'Environment Agency', 'Surface Water': 'Lead Local Flood Authorities'}
         nearest_flood_source = flood_risk['flood_source'].iloc[0]
-        nearest_flood_risk_dist = flood_risk['distance_m'].iloc[0]
+        nearest_flood_risk_dist = int(flood_risk['distance_m'].iloc[0])
+        distance_str = f"{nearest_flood_risk_dist}m" if nearest_flood_risk_dist < 50 else f"{round((nearest_flood_risk_dist/1000), 1)}km"
         authority_explanation = authority[nearest_flood_source]
         if nearest_flood_risk_dist == 0:
             output['risk'] = 'High'
             output['explanation'] = f"Selected area designated as place of 'Significant Flood Risk', as defined by the {authority_explanation} due to exposure to flood via {nearest_flood_source.lower()}. "
         if output['risk'] != None and len(flood_risk['flood_source'].unique()) > 1:
             secondary_risk = flood_risk[flood_risk['flood_source'] != nearest_flood_source].iloc[0]
-            distance = int(secondary_risk['distance_m'])
-            distance_str = f"{distance}m" if distance < 50 else f"{round((distance/1000), 1)}km"
+            secondary_distance = int(secondary_risk['distance_m'])
+            distance_str = f"{secondary_distance}m" if secondary_distance < 50 else f"{round((secondary_distance/1000), 1)}km"
             output['explanation'] += f"There is also a secondary flood risk from {secondary_risk['flood_source'].lower()}, approximately {distance_str} from your selected point. "
         if output['risk'] == None and nearest_flood_risk_dist < self.buffer:
             output['risk'] = 'High' if nearest_flood_risk_dist < 2500 else 'Moderate'
-            distance = int(nearest_flood_risk_dist)
-            distance_str = f"{distance}m" if distance < 50 else f"{round((distance/1000), 1)}km"
             output['explanation'] = f'There is a high flood risk zone, as defined by the {authority_explanation}, within your selected buffer zone of {int(self.buffer/1000)}km, due to exposure from {nearest_flood_source.lower()}. However, the flood risk boundary is located {distance_str} from your selected point. '
-        if output['risk'] == None and nearest_flood_risk_dist > self.buffer:
+        elif output['risk'] == None:
             output['risk'] = 'Low'
             output['explanation'] = f'Low risk: high flood risk zones, as defined by the Environment Agency and Local Lead Flood Authorities, are not contained within your zone of interest. Nearest high flood risk zone: {distance_str}. '  
 
         output['explanation'] += "View the flood risk layer in the results map for more information."
+        return(output)
 
 
 if __name__ == '__main__':

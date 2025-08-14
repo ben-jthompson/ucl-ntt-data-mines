@@ -5,8 +5,9 @@ import time
 import json
 import shutil
 from flask_limiter import Limiter
-from server.querying_graph.pipeline import Pipeline
 from server.utils import make_file_path, undo_file_path
+from server.session_graph import build_session_graph
+from server.message_dict import MESSAGE_DICT
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, methods=["GET", "POST", "DELETE", "OPTIONS", "PUT"])
@@ -137,26 +138,69 @@ def get_geojson(filename):
 
 @app.route("/api/pipeline", methods=["GET"])
 def run_pipeline():
-    
     location = request.args.get("location")
     query = request.args.get("query")
+    # TODO: change tag to be iterable for each query
     tag = request.args.get("tag")
     client_id = request.args.get("client_id")
-    print('Query: ', query)
-    pipeline = Pipeline(location, query, tag, client_id)
+    buffer = int(request.args.get("buffer"))
+    coords = request.args.get("coords")
+    coords = [float(coord) for coord in coords.strip().split(" ")]
 
-    def generate():
-        yield f"data: Starting pipeline for query: {query}\n\n"
-        time.sleep(2)
+    # query_pipeline = Pipeline(location, query, tag, client_id, coords)
+    session_graph = build_session_graph()
+    session_state = {
+        'current': 'region',
+        'client_id': client_id,
+        'location': location,
+        'coords': coords,
+        'buffer': buffer,
+        'region': '',
+        'queries': [], 
+        'tags': [],
+        'docs': [],
+        'retriever': None,
+        'response': '',
+        'suitability': [],
+        'report_sections': []
+        }
+
+    def generate():       
+        for event in session_graph.stream(session_state, stream_mode='updates'):
+            print("YIELD")
+            node = list(event.keys())[0]
+            current_node = event[node]['current']
+            if current_node:
+                message_to_display = MESSAGE_DICT[current_node]
+                message = {
+                    'type': 'node_change',
+                    'node': message_to_display
+                }
+                yield f"data: {json.dumps(message)}\n\n"
+
+           
+            # if node_name == "run_spatial_queries":
+            #     print("node_state['output']: ", node_state['output'])
+            #     yield f"data: {json.dumps(node_state)}\n\n"
+            # else:
+            #     yield f"data: {json.dumps({'node': node_name, 'state': node_state})}\n\n"
+
+        # yield f"data: Starting pipeline for query: {query}\n\n"
+        # time.sleep(2)
         # yield "data: Scraping documents...\n\n"
-        # pipeline.scrape()
-        yield "data: Adding your documents...\n\n"
-        pipeline.add_context()
-        yield "data: Embedding documents...\n\n"
-        pipeline.embed()
-        yield "data: Querying LLM...\n\n"
-        result = pipeline.query_llm()
-        yield f"data: DONE: {result}\n\n"
+        # # pipeline.scrape()
+        # time.sleep(2)
+        # yield "data: Adding your documents...\n\n"
+        # # pipeline.add_context()
+        # time.sleep(2)
+        # yield "data: Embedding documents...\n\n"
+        # # pipeline.embed()
+        # time.sleep(2)
+        time.sleep(30)
+        # yield "data: Querying LLM...\n\n"
+        # result = query_pipeline.query_llm()
+        time.sleep(2)
+        # yield f"data: DONE: {result}\n\n"
         yield "data: DONE\n\n"
 
     return Response(stream_with_context(generate()), content_type='text/event-stream')

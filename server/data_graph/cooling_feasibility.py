@@ -9,7 +9,7 @@ class CoolingFeasibility:
         self.buffer = buffer
         self.point_gdf = gpd.GeoDataFrame(geometry=[self.point], crs='EPSG:4326').to_crs('EPSG:27700')
         self.buffered_gdf = gpd.GeoDataFrame(
-            geometry=self.point_gdf.buffer(buffer),
+            geometry=self.point_gdf.buffer(float(buffer)),
             crs=self.point_gdf.crs
         )
     def get_temperature_differentials(self):
@@ -50,9 +50,9 @@ class CoolingFeasibility:
             '3': ["virtually non-existent flow", 0.1]
         }
         productivities = {
-            'A': ['High', 1, 'descript'],
-            'B': ['Medium', 0.6, 'descript'],
-            'C': ['Low', 0.2, 'descript']
+            'A': ['High', 1, 'designated a principal aquifer, this is largely composed of geological formations of high permeability and water storage capacity, typically supporting public water supplies and river base flows'],
+            'B': ['Medium', 0.6, 'designated a secondary aquifer, this is largely composed ofgeological formations of lower permeability than principal aquifers, but still capable of providing some water supply or supporting surface water flows'],
+            'C': ['Low', 0.2, 'designated as unproductive, this is largely composed of geological formations with very low permeability, meaning they are unlikely to provide significant water supplies or support surface water and ecosystems']
         }
 
         output = {
@@ -63,7 +63,7 @@ class CoolingFeasibility:
         aquifer_scores = []
         for index, aquifer in aquifers.iterrows():
             if len(aquifer['CLASS'])==1:
-                productivity = 0
+                productivity = ['None', 0, 'designated as unproductive, this is largely composed of geological formations with very low permeability, meaning they are unlikely to provide significant water supplies or support surface water and ecosystems']
             else:
                 productivity = productivities[aquifer['CLASS'][1]]
             
@@ -80,8 +80,10 @@ class CoolingFeasibility:
             
         nearest_aquifer = aquifer_scores[0]
         best_aquifer = [aquifer for aquifer in aquifer_scores if aquifer['rank'] == 1][0]
-        
-        output['explanation'] = f"The aquifer below the selected point is a {nearest_aquifer['description'][0].lower()} productivity aquifer - {nearest_aquifer['description'][1]}. This aquifer is identified as having the best characteristics in the area for water pumping. "
+        if nearest_aquifer['distance'] == 0:
+            output['explanation'] = f"The aquifer below the selected point is a {nearest_aquifer['description'][0].lower()} productivity aquifer - {nearest_aquifer['description'][1]}. "
+        else:
+            output['explanation'] = f"The aquifer below the selected point is a {nearest_aquifer['description'][0].lower()} productivity aquifer - {nearest_aquifer['description'][1]}. "
         if nearest_aquifer != best_aquifer:
             output['explanation'] += f"However, the most appropriate aquifer is a {best_aquifer['description'][0].lower()} productivity aquifer - {best_aquifer['description'][2]}, with {best_aquifer['description'][1]}. This aquifer is located {best_aquifer['distance']}m from the selected point."
         
@@ -95,7 +97,6 @@ class CoolingFeasibility:
             output['explanation'] += "The optimal nearby aquifer conditions are very challenging and most likely unsuitable for a data centre project."
             output['suitability'] = 'Low'
 
-        print(output)
         return output
 
     def calculate_aquifer_suitability(self, productivity, flow_mecha, distance):
