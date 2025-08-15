@@ -5,6 +5,8 @@ import { MapContainer, TileLayer, Marker, Circle, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { stringify } from "querystring";
+import { useState, useEffect } from "react";
+import { ReportFile } from "@/types/ReportFile";
 
 // Apply default marker
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -18,14 +20,18 @@ L.Icon.Default.mergeOptions({
 function LocationMarker({
   coords,
   radius,
+  metadata,
 }: {
   coords: [number, number] | null;
   radius: number;
+  metadata?: ReportFile;
 }) {
   return coords ? (
     <>
       <Marker position={coords}>
         <Popup>
+          {/* TODO: Add info for reports (eg. metadata && ()) */}
+          {/* TODO: Add download button, and download supplementary zip button */}
           lat: {Math.round(coords[0] * 10000) / 10000}; lng:{" "}
           {Math.round(coords[1] * 10000) / 10000}
         </Popup>
@@ -38,12 +44,18 @@ function LocationMarker({
 export default function ResultMap({
   coords,
   radius,
+  reports,
   result,
 }: {
   coords: [number, number] | null;
   radius: number;
-  result: boolean;
+  reports?: ReportFile[];
+  result?: ReportFile;
 }) {
+  const [centre, setCentre] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+
   const zoomScale: { [key: number]: number } = {
     5000: 12,
     10000: 11,
@@ -52,6 +64,18 @@ export default function ResultMap({
 
   const zoom = result ? (zoomScale[radius] ?? 7) - 1 : zoomScale[radius] ?? 6;
 
+  const hasOneResult = reports ? reports.length === 1 : false;
+  useEffect(() => {
+    // TODO: find way to zoom in
+    if (result) {
+      console.log("RESULT IS ", result);
+      setCentre({ lat: result["coords"][0], lng: result["coords"][1] });
+    } else if (hasOneResult && reports) {
+      setCentre({ lat: reports[0]["coords"][0], lng: reports[0]["coords"][1] });
+    } else {
+      setCentre({ lat: 53.505, lng: -0.09 });
+    }
+  }, []);
   return coords ? (
     <Box
       sx={{
@@ -75,15 +99,46 @@ export default function ResultMap({
       </MapContainer>
     </Box>
   ) : (
-    <Grid
-      container
-      justifyContent="center"
-      alignItems="center"
-      style={{ minHeight: "100vh" }}
-    >
-      <Typography>
-        An unexpected error occurred. Please reload the page.
-      </Typography>
+    <Grid size={{ xs: 12 }}>
+      <Box
+        sx={{
+          height: "400px",
+          borderRadius: 2,
+          overflow: "hidden",
+          mt: 3,
+          textAlign: "center",
+        }}
+      >
+        {centre && (
+          <MapContainer
+            center={centre}
+            zoom={6}
+            style={{ height: "100%", width: "100%" }}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; OpenStreetMap contributors"
+            />
+            {reports &&
+              reports.map((report, idx) => (
+                <LocationMarker
+                  key={`report-${idx}`}
+                  coords={report.coords}
+                  radius={1000}
+                  metadata={report}
+                />
+              ))}
+
+            {result && (
+              <LocationMarker
+                coords={result.coords}
+                radius={1000}
+                metadata={result}
+              />
+            )}
+          </MapContainer>
+        )}
+      </Box>
     </Grid>
   );
 }

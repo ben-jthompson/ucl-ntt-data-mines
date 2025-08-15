@@ -28,6 +28,7 @@ export default function Output({
   radius: number;
 }) {
   useEffect(() => {
+    // TODO: return zip file to user, with meta.json
     const client = localStorage.getItem("clientId");
     axios
       .post(`http://localhost:8080/api/clients/${client}/files/zip`, {
@@ -48,7 +49,7 @@ export default function Output({
           Radius: {radius}
         </div>
         ;<div> Results</div>
-        <ResultMap coords={coords} radius={radius} result={true} />
+        <ResultMap coords={coords} radius={radius} />
       </>
     )
   );

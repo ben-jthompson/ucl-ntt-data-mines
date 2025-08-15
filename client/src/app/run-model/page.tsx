@@ -34,6 +34,7 @@ export default function RunModel() {
 
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [modelRunning, setModelRunning] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,7 +63,7 @@ export default function RunModel() {
         // TODO: wait for loading before allowing
         return loading == false;
       case 2:
-        return true;
+        return modelRunning == false;
       // case 3:
       default:
         return true;
@@ -116,12 +117,14 @@ export default function RunModel() {
           )
         );
       case 2:
+        setModelRunning(true);
         return coords ? (
           <ModelRunning
             location={location}
             query={"Gravitational Energy"}
             coords={coords}
             buffer={radius}
+            onFinishedRunning={setModelRunning}
           />
         ) : (
           <Container maxWidth="md" sx={{ py: 4 }}>
@@ -138,19 +141,6 @@ export default function RunModel() {
     }
   };
 
-  // if (loading) {
-  //   console.log("[Registration Page] Rendering loading state");
-  //   return (
-  //     <Container maxWidth="md" sx={{ py: 4 }}>
-  //       <CircularProgress />
-  //       <Typography variant="h6" sx={{ mt: 2 }}>
-  //         Loading your information...
-  //       </Typography>
-  //     </Container>
-  //   );
-  // }
-
-  // console.log("[Registration Page] Rendering main content");
   return (
     <Box sx={{ px: 5 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
@@ -165,7 +155,10 @@ export default function RunModel() {
         {renderContent(activeStep)}
 
         <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-          <Button disabled={activeStep === 0} onClick={handleBack}>
+          <Button
+            disabled={activeStep === 0 || activeStep === 3}
+            onClick={handleBack}
+          >
             Back
           </Button>
 

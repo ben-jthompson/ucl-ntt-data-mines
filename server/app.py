@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, Response, stream_with_context, make_response
+from flask import Flask, request, jsonify, send_file, Response, stream_with_context, make_response, abort
 from flask_cors import CORS
 import os
 import time
@@ -110,7 +110,44 @@ def get_uploaded_files(client_id):
             "id": metadata.get("id"),
             "tags": tag_list
         })
-    return jsonify({"success":"files retrieved successfully", "files": uploaded_files}), 200
+    return jsonify({"success": True, "files": uploaded_files}), 200
+
+@app.route("/api/reports/<client_id>", methods=["GET"])
+def get_reports(client_id):
+    reports_folder = os.path.join(os.getcwd(), "server/reports", client_id)
+    
+    if not os.path.exists(reports_folder):
+        return jsonify({"success":"no files to retrieve"}), 200
+    
+    report_metadatas = []
+    print(os.listdir(reports_folder))
+    for filename in os.listdir(reports_folder):
+        if filename.endswith('.meta.json'):
+            print(filename)
+            filepath = os.path.join(reports_folder, filename)
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    metadata = json.load(f)
+            except:
+                continue
+            report_metadatas.append({
+                    'file_name': metadata.get("file_name"),
+                    'display_name': metadata.get("display_name"),
+                    'description': metadata.get("description"),
+                    'id': metadata.get("id"),
+                    'coords': metadata.get("coords"),
+                    'upload_date': metadata.get("upload_date")})
+    return jsonify({'success': True, 'files': report_metadatas}), 200
+
+@app.route("/api/reports/<client_id>/files/<file_name>", methods=["GET"])
+def download_report(client_id, file_name):
+    if not file_name or not client_id:
+        return jsonify({"error": "Missing filename or ID"}), 400
+
+    report_path = os.path.join(os.getcwd(), 'server/reports', client_id, file_name)
+    if not os.path.exists(report_path):
+        abort(404, description="File not found")
+    return send_file(report_path, as_attachment=True)
 
 @app.route("/api/clients/<client_id>/files/zip", methods=["POST"])
 def zip_uploaded_files(client_id):
@@ -123,7 +160,7 @@ def zip_uploaded_files(client_id):
     try:
         shutil.make_archive(output_path, "zip", upload_folder)
         shutil.rmtree(upload_folder)
-        return jsonify({"success": "Zipped and cleaned"}), 200
+        return jsonify({"success": True}), 200
     except FileNotFoundError:
         return jsonify({"error": "Zip failed"}), 404
   
@@ -134,8 +171,7 @@ def get_geojson(filename):
         return send_file(filepath, mimetype='application/json')
     except FileNotFoundError:
         return jsonify({"error": "File not found"}), 404
-
-
+    
 @app.route("/api/pipeline", methods=["GET"])
 def run_pipeline():
     location = request.args.get("location")

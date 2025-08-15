@@ -26,11 +26,13 @@ export default function ModelRunning({
   query = "Gravitational Energy",
   coords,
   buffer,
+  onFinishedRunning,
 }: {
   location: string | undefined;
   query: string;
   coords: [number, number];
   buffer: number;
+  onFinishedRunning: (running: boolean) => void;
 }) {
   const [progressBar, setProgressBar] = useState(0);
 
@@ -71,11 +73,13 @@ export default function ModelRunning({
         if (event.data === "DONE") {
           console.log("Event source closed.");
           eventSource.close();
+          onFinishedRunning(false);
         }
       };
       eventSource.onerror = function (error) {
         console.error("EventSource failed:", error);
         eventSource.close();
+        onFinishedRunning(false);
       };
     }
   }, []);

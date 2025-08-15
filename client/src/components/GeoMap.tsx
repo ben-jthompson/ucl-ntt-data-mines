@@ -150,14 +150,11 @@ export default function GeoMap({
   coords,
   onLocationSelected,
   radius,
-  reports,
 }: {
   coords: [number, number] | null;
   onLocationSelected: (coords: [number, number]) => void;
   radius: number;
-  reports?: [number, number][];
 }) {
-  const [centre, setCentre] = useState({ lat: 53.505, lng: -0.09 });
   const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(
     coords
   );
@@ -174,7 +171,7 @@ export default function GeoMap({
   >({
     mineExtent: true,
     mineEntries: false,
-    aquifers: true,
+    aquifers: false,
     wasteHeat: false,
   });
   const layerLegend: Record<string, string> = {
@@ -192,18 +189,11 @@ export default function GeoMap({
     }));
   };
 
-  const hasOneResult = reports ? (reports.length = 1) : false;
-
   const zoomScale: { [key: number]: number } = {
     5000: 12,
     10000: 11,
     20000: 10,
   };
-
-  const zoom = hasOneResult ? (zoomScale[radius] ?? 7) - 1 : 6;
-  if (hasOneResult && reports) {
-    setCentre({ lat: reports[0][0], lng: reports[0][1] });
-  }
 
   useEffect(() => {
     axios.get("geojson/uk.geo.json").then((res) => setUKBound(res.data));
@@ -255,8 +245,8 @@ export default function GeoMap({
       >
         {UKBound != null ? (
           <MapContainer
-            center={centre}
-            zoom={zoom}
+            center={{ lat: 53.505, lng: -0.09 }}
+            zoom={6}
             style={{ height: "100%", width: "100%" }}
           >
             <TileLayer

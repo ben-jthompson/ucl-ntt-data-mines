@@ -228,7 +228,7 @@ export default function ContextValidation({
             textAlign: "center",
           }}
         >
-          <ResultMap coords={coords} radius={radius} result={false} />
+          <ResultMap coords={coords} radius={radius} />
           {!loading && (
             <Box>
               {areaDescription.locality ? (
