@@ -3,17 +3,7 @@ from langgraph.graph import StateGraph
 from .data_pipeline_funcs import get_local_authority
 from .cooling_feasibility import CoolingFeasibility
 from .environmental_feasibility import EnvironmentalFeasibility
-from ..session_state import SessionState
-
-class DataPipelineState(TypedDict):
-    current: str
-    coords: tuple
-    buffer: int
-    region: str
-    suitability: list
-    report_sections: list
-
-    
+from ..session_state import SessionState    
 
 def region_node(state: SessionState) -> SessionState:
     print('Moving to region node...')
@@ -59,22 +49,3 @@ def formatting_node(state: SessionState) -> SessionState:
     state['report_sections'].append({'Data Queries': entry})
     state['current'] = 'data_end'
     return state
-
-
-
-
-def build_data_pipeline_graph():
-    graph = StateGraph(SessionState)
-    graph.add_node("region", region_node)
-    graph.add_node("cooling", cooling_node)
-    graph.add_node("environmental", environmental_node)
-    graph.add_node("formatter", formatting_node)
-
-    graph.set_entry_point("region")
-    graph.add_edge("region", "cooling")
-    graph.add_edge("cooling", "environmental")
-    graph.add_edge("environmental", "formatter")
-
-    pipeline = graph.compile()
-    return pipeline
-

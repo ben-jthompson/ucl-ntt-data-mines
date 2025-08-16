@@ -4,5 +4,5 @@ export type ReportFile = {
   description?: string;
   id: string;
   coords: [number, number];
-  upload_date: Date;
+  upload_date: string;
 };

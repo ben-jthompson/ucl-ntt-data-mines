@@ -1,12 +1,14 @@
 "use client";
 
-import { Box, Grid, Typography } from "@mui/material";
+import { Box, Grid, Button, Typography } from "@mui/material";
 import { MapContainer, TileLayer, Marker, Circle, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { stringify } from "querystring";
 import { useState, useEffect } from "react";
 import { ReportFile } from "@/types/ReportFile";
+import { formatDate, viewReport, downloadReport } from "@/utilities/Utilities";
+import DocumentViewer from "./DocumentViewer";
 
 // Apply default marker
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -21,20 +23,54 @@ function LocationMarker({
   coords,
   radius,
   metadata,
+  setViewerLink,
+  setDialogOpen,
 }: {
   coords: [number, number] | null;
   radius: number;
   metadata?: ReportFile;
+  setViewerLink?: (link: string) => void;
+  setDialogOpen?: (open: boolean) => void;
 }) {
+  const clientId = localStorage.getItem("clientId");
   return coords ? (
     <>
       <Marker position={coords}>
-        <Popup>
-          {/* TODO: Add info for reports (eg. metadata && ()) */}
-          {/* TODO: Add download button, and download supplementary zip button */}
-          lat: {Math.round(coords[0] * 10000) / 10000}; lng:{" "}
-          {Math.round(coords[1] * 10000) / 10000}
-        </Popup>
+        {metadata && clientId && setDialogOpen && setViewerLink ? (
+          <Popup>
+            {metadata.display_name}\n Uploaded on:{" "}
+            {formatDate(metadata.upload_date)}
+            <Button
+              size="small"
+              variant="outlined"
+              sx={{ mr: 1 }}
+              onClick={() =>
+                viewReport(
+                  clientId,
+                  metadata.file_name,
+                  setDialogOpen,
+                  setViewerLink
+                )
+              }
+            >
+              View
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => downloadReport(clientId, metadata.file_name)}
+            >
+              Download
+            </Button>
+          </Popup>
+        ) : (
+          <Popup>
+            {/* TODO: Add info for reports (eg. metadata && ()) */}
+            {/* TODO: Add download button, and download supplementary zip button */}
+            lat: {Math.round(coords[0] * 10000) / 10000}; lng:{" "}
+            {Math.round(coords[1] * 10000) / 10000}{" "}
+          </Popup>
+        )}
       </Marker>
       <Circle center={coords} radius={radius} />
     </>
@@ -52,6 +88,8 @@ export default function ResultMap({
   reports?: ReportFile[];
   result?: ReportFile;
 }) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewerLink, setViewerLink] = useState<string | null>(null);
   const [centre, setCentre] = useState<{ lat: number; lng: number } | null>(
     null
   );
@@ -68,7 +106,6 @@ export default function ResultMap({
   useEffect(() => {
     // TODO: find way to zoom in
     if (result) {
-      console.log("RESULT IS ", result);
       setCentre({ lat: result["coords"][0], lng: result["coords"][1] });
     } else if (hasOneResult && reports) {
       setCentre({ lat: reports[0]["coords"][0], lng: reports[0]["coords"][1] });
@@ -126,6 +163,8 @@ export default function ResultMap({
                   coords={report.coords}
                   radius={1000}
                   metadata={report}
+                  setDialogOpen={setDialogOpen}
+                  setViewerLink={setViewerLink}
                 />
               ))}
 
@@ -134,11 +173,20 @@ export default function ResultMap({
                 coords={result.coords}
                 radius={1000}
                 metadata={result}
+                setDialogOpen={setDialogOpen}
+                setViewerLink={setViewerLink}
               />
             )}
           </MapContainer>
         )}
       </Box>
+      {dialogOpen && viewerLink && (
+        <DocumentViewer
+          pdf={viewerLink}
+          dialogOpen={dialogOpen}
+          onDialogClosed={setDialogOpen}
+        />
+      )}
     </Grid>
   );
 }

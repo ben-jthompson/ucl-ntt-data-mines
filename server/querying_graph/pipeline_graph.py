@@ -7,19 +7,6 @@ import json
 from typing import TypedDict
 from ..session_state import SessionState
 
-class PipelineState(TypedDict):
-    location: str
-    query: str
-    tag: str
-    region: str
-    client_id: str
-    coords: tuple
-    docs: list
-    retriever: object
-    response: str
-
-
-
 def scrape_node(state: SessionState) -> SessionState:
     state["query"] = state["queries"][0]
     state["tag"] = state["tags"][0]
@@ -56,34 +43,3 @@ def reset_state_node(state: SessionState) -> SessionState:
     state['docs'] = []
     state['retriever'] = None
     return state
-
-# def build_pipeline_graph():
-#     graph = StateGraph(SessionState)
-#     graph.add_node("scrape", scrape_node)
-#     graph.add_node("add_context", add_context_node)
-#     graph.add_node("embed", embed_node)
-#     graph.add_node("query_llm", query_llm_node)
-
-#     graph.set_entry_point("scrape")
-#     graph.add_edge("scrape", "add_context")
-#     graph.add_edge("add_context", "embed")
-#     graph.add_edge("embed", "query_llm")
-
-#     pipeline = graph.compile()
-#     return pipeline
-
-# Run for a list of queries
-# results = []
-# for q in queries:
-#     state = {
-#         "location": "NYC",
-#         "query": q,
-#         "tag": "some-tag",
-#         "client_id": "123",
-#         "coords": (40.7128, -74.0060),
-#         "docs": [],
-#         "retriever": None,
-#         "response": ""
-#     }
-#     final_state = pipeline.invoke(state)
-#     results.append(final_state["response"])

@@ -15,10 +15,13 @@ class SessionState(TypedDict, total=False):
 
     # Querying phase
     queries: List[Dict] 
-    query: Dict            
+    query: Dict
     tags: Optional[str]
     tag: str              
     docs: List[Any]
     retriever: Optional[Any]
     response: Optional[str]
+
+    # Report phase
+    metadata: Dict
 
