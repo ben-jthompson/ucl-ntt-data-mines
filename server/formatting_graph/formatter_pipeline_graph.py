@@ -7,7 +7,7 @@ def text_compilation_node(state: SessionState) -> SessionState:
     pass
 
 def pdf_creation_node(state: SessionState) -> SessionState:
-    report_builder = ReportBuilder(client_id=state['client_id'], location=state['location'], report_sections=[])
+    report_builder = ReportBuilder(client_id=state['client_id'], location=state['location'], report_sections=state['report_sections'])
     report_builder.run()
     # TODO: get cursor to modify private vars eg. client id with an _
     metadata = report_builder.get_metadata()
@@ -26,5 +26,92 @@ def metadata_making_node(state: SessionState) -> SessionState:
         json.dump(state["metadata"], f, indent=2)
 
 if __name__ == '__main__':
-    metadata = pdf_creation_node({'location':'Adderbury', 'metadata': {}, 'coords': [53.1, -1.2], 'client_id': '123445'})   
+    metadata = pdf_creation_node({
+    'location': 'Adderbury',
+    'metadata': {},
+    'coords': [53.1, -1.2],
+    'client_id': '123445',
+    'report_sections': [
+        {
+            'topic': 'Farming',
+            'suitability': 'High',
+            'explanation': (
+                "The soil in this area is fertile, well-drained, and ideal for crop rotation. Irrigation is readily available, and the climate supports a wide range of crops. Farmers can cultivate cereals, vegetables, and fruits throughout the year. "
+                "Sustainable farming practices are encouraged to maintain soil quality and preserve "
+                "biodiversity. The area also benefits from easy access to local markets and transportation "
+                "routes, allowing farmers to sell produce efficiently. Additionally, there are several "
+                "government programs and subsidies available for modern farming equipment, organic "
+                "certifications, and water management systems. Crop rotation, composting, and natural pest "
+                "management techniques ensure long-term productivity while protecting the environment. "
+                "Community farming initiatives provide knowledge-sharing platforms that enhance crop yields "
+                "and encourage environmentally-friendly farming practices across the region."
+            )
+        },
+        {
+            'topic': 'Urban Development',
+            'suitability': 'Medium',
+            'explanation': (
+                "This area has moderate potential for urban development due to existing infrastructure, "
+                "including road networks, electricity, and water supply. However, there are zoning "
+                "regulations and land use restrictions that limit construction and expansion in certain zones. "
+                "Development must consider environmental impact assessments and maintain a balance between "
+                "green spaces and residential or commercial structures. The proximity to schools, hospitals, "
+                "and shopping centers makes some neighborhoods attractive for new housing projects. "
+                "Urban planning strategies should incorporate pedestrian-friendly pathways, public transportation, "
+                "and community recreation spaces to improve the quality of life for residents. Developers are "
+                "encouraged to adopt sustainable building techniques, such as energy-efficient materials, "
+                "rainwater harvesting, and renewable energy sources. Collaboration with local authorities "
+                "ensures compliance with municipal codes and promotes harmonious urban growth."
+            )
+        },
+        {
+            'topic': 'Conservation',
+            'suitability': 'Low',
+            'explanation': (
+                "This region is primarily designated for conservation due to the presence of protected "
+                "wildlife habitats and wetland ecosystems. Human activity is restricted to preserve the "
+                "natural environment and biodiversity. The area is home to endangered species, native flora, "
+                "and migratory birds that require careful monitoring. Conservation measures include controlled "
+                "access for tourists, habitat restoration projects, and environmental education programs. "
+                "Research initiatives focus on maintaining ecological balance and preventing habitat degradation. "
+                "Local communities are engaged in sustainable practices, such as avoiding deforestation, "
+                "minimizing pollution, and promoting eco-friendly livelihoods. This area offers limited "
+                "opportunities for farming or urban development, but it plays a critical role in regional "
+                "environmental health and climate resilience. Effective conservation strategies help maintain "
+                "water quality, soil integrity, and carbon sequestration in the ecosystem."
+            )
+        },
+        {
+            'topic': 'Renewable Energy',
+            'suitability': 'High',
+            'explanation': (
+                "The open fields and consistent wind patterns in this region make it highly suitable for "
+                "renewable energy installations. Solar farms can take advantage of long hours of sunlight, "
+                "while wind turbines can harness the frequent winds without obstruction from buildings or "
+                "trees. Energy production from renewable sources provides economic opportunities and reduces "
+                "dependence on fossil fuels. Local policies support investment in sustainable energy projects, "
+                "including grants and tax incentives. Infrastructure for energy storage and grid integration is "
+                "available, facilitating efficient distribution. Community awareness programs educate residents "
+                "about the benefits of renewable energy, encouraging local support and participation. "
+                "Environmental assessments ensure minimal impact on surrounding ecosystems, and technological "
+                "advances continue to improve efficiency and reduce costs. Establishing renewable energy projects "
+                "in this area contributes to long-term sustainability, energy security, and climate mitigation efforts."
+            )
+        },
+        {
+            'topic': 'Recreation',
+            'suitability': 'Medium',
+            'explanation': (
+                "The scenic landscape and accessibility make this region suitable for recreational development. Parks, sports facilities, and walking trails can be designed to encourage outdoor activities and community engagement. Careful planning ensures that natural features such as lakes, forests, and hills are preserved while providing safe spaces for recreation. Facilities can include "
+                "playgrounds, picnic areas, cycling paths, and outdoor fitness zones. Recreational development "
+                "also promotes tourism and local business opportunities, such as cafes, rental shops, and guided "
+                "tour services. Environmental sustainability is emphasized by using permeable surfaces, native "
+                "plants, and waste management systems. Collaboration with local authorities and community groups "
+                "ensures that recreation projects meet safety standards, accessibility requirements, and cultural "
+                "needs. This balance between enjoyment and preservation makes the area a valuable resource for "
+                "residents and visitors alike."
+            )
+        }
+    ] * 4  # replicate to get 20 sections for testing
+})
     metadata_making_node(metadata) 

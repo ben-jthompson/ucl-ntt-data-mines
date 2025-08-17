@@ -1,48 +1,84 @@
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from .formatter_components import draw_front_cover, draw_page_layout
-from .formatter_utils import file_format_string
-from typing import List
-import datetime as dt
 import os
+import datetime as dt
+from typing import List, Dict
+
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    PageBreak,
+    KeepTogether,
+)
+from reportlab.lib.styles import getSampleStyleSheet
+from .formatter_utils import file_format_string, render_header_footer
+from .formatter_components import front_cover, figure, report_section, table
+
 
 class ReportBuilder:
-    def __init__(self, client_id: str, location: str, report_sections: List):
+    def __init__(self, client_id: str, location: str, report_sections: List[Dict]):
         self.date = dt.datetime.today()
         self.display_date = self.date.strftime("%d %B %Y")
         self.location = location
         self.client_id = client_id
         self.content = report_sections
         self.filename = self.format_filename()
-        self.folder = os.path.join('server/reports', self.client_id, self.filename)
-        self.canvas = canvas.Canvas(filename=self.folder, pagesize=A4)
-    
-    def format_filename(self):
+        self.folder = os.path.join("server/reports", self.client_id, self.filename)
+
+        self.styles = getSampleStyleSheet()
+        self.doc = SimpleDocTemplate(
+            self.folder,
+            pagesize=A4,
+            topMargin=70,
+            bottomMargin=90,
+            leftMargin=40,
+            rightMargin=40,
+        )
+        self.doc.header_string = f"{self.location} Feasibility Report"
+
+    def format_filename(self) -> str:
         file_date = file_format_string(self.date)
         file_location = file_format_string(self.location)
-        return f'{file_location}-{file_date}-{self.client_id[:5]}.pdf'
+        return f"{file_location}-{file_date}-{self.client_id[:5]}.pdf"
 
-    def setup_document(self):
-        #  front cover setup
-        draw_front_cover(self.canvas, self.location)
-        pass
+    def build_story(self) -> List:
+        """Assemble the document content as a list of flowables."""
+        story = []
 
-    def render_page(self, num):
-        draw_page_layout(num)
-        self.canvas.showPage()
+        # === Front cover ===
+        story.extend(front_cover(self.location))
 
-    def get_metadata(self):
+        # === Report sections ===
+        for section in self.content:
+            story.extend(report_section(section, self.doc))
+
+        return story
+
+    def get_metadata(self) -> dict:
         return {
-            'file_name': os.path.join(os.getcwd(), "server/reports", self.client_id, self.filename),
-            'display_date': self.display_date,
-            'date': self.date}
+            "file_name": os.path.join(
+                os.getcwd(), "server/reports", self.client_id, self.filename
+            ),
+            "display_date": self.display_date,
+            "date": self.date,
+        }
 
     def run(self):
-        self.setup_document()
-        while self.content:
-            self.draw_new_page()
-        self.canvas.save()
+        story = self.build_story()
+        self.doc.build(story, onLaterPages=render_header_footer)
+
 
 if __name__ == "__main__":
-    report_builder = ReportBuilder(client_id='12394535', location="South Wales Coalfield", report_sections=[])
+    report_builder = ReportBuilder(
+        client_id="12394535",
+        location="South Wales Coalfield",
+        report_sections=[
+            {
+                "topic": "Farming",
+                "suitability": "High",
+                "explanation": "Fertile soils " + "-" * 200,
+            }
+        ]
+        * 10,
+    )
     report_builder.run()
