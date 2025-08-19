@@ -4,10 +4,12 @@ import json
 import os
 
 def text_compilation_node(state: SessionState) -> SessionState:
+    # TODO: make cgpt rewrite all the automatically produced content?
+    # TODO: prompt 'only write the response with no other comments'
     pass
 
 def pdf_creation_node(state: SessionState) -> SessionState:
-    report_builder = ReportBuilder(client_id=state['client_id'], location=state['location'], report_sections=state['report_sections'])
+    report_builder = ReportBuilder(client_id=state['client_id'], location=state['location'], report_sections=state['report_sections'], bibliography=state['bibliography'])
     report_builder.run()
     # TODO: get cursor to modify private vars eg. client id with an _
     metadata = report_builder.get_metadata()
@@ -30,7 +32,20 @@ if __name__ == '__main__':
     'location': 'Adderbury',
     'metadata': {},
     'coords': [53.1, -1.2],
-    'client_id': '123445',
+    'client_id': '2ff3ade2-9405-47ee-8014-804361215db2',
+    'bibliography': [{
+        "file_name": "USER.pdf",
+  "description": None,
+  "tags": None,
+  "id": "77d5deb8-d72b-4bd7-ad56-7e3a79108b34",
+  "user": True
+}, {
+    "file_name": 'j2o.pdf',
+  "description": None,
+  "tags": None,
+  "id": "77d5deb8-d72b-4bd7-ad56-7e3a79108b34",
+  "link": "https://google.co.uk"
+}],
     'report_sections': [
         {
             'topic': 'Farming',

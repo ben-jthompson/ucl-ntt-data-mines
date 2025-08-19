@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph
 from typing import TypedDict, List, Dict, Tuple, Any, Optional
 from .querying_graph.pipeline_graph import scrape_node, add_context_node, embed_node, query_llm_node, reset_state_node
-from .data_graph.data_pipeline_graph import region_node, cooling_node, environmental_node, formatting_node
+from .data_graph.data_pipeline_graph import region_node, cooling_node, environmental_node, formatting_node, data_bibliography
 from .formatting_graph.formatter_pipeline_graph import text_compilation_node, pdf_creation_node, metadata_making_node
 from collections.abc import Generator
 from .session_state import SessionState
@@ -13,6 +13,7 @@ def build_session_graph():
     graph.add_node("cooling", cooling_node)
     graph.add_node("environmental", environmental_node)
     graph.add_node("formatter", formatting_node)
+    graph.add_node("data_bibliography", data_bibliography)
     
     # graph.add_node("scrape", scrape_node)
     # graph.add_node("add_context", add_context_node)

@@ -1,5 +1,7 @@
 import geopandas as gpd
+import numpy as np
 from shapely.geometry import Point
+from shapely import force_2d
 from geopandas import GeoDataFrame
 
 def read_and_convert_geojson_file(file):
@@ -85,6 +87,79 @@ def find_and_sort_features(feature_gdf, buffered_gdf, point_gdf) -> GeoDataFrame
         return find_nearest(feature_gdf, point_gdf)
     return features_sorted
 
+def find_average_depth(geometry):
+    """Extract average height from MultiPolygon"""
+    if geometry.is_empty:
+        return None
+
+    z_values = []
+    for polygon in geometry.geoms:
+        for x, y, z in polygon.exterior.coords:
+                z_values.append(z)
+    
+    if z_values:
+        return sum(z_values) / len(z_values)
+    else:
+        return None
+
+def find_geometry_area(geometry):
+    """Estimate square metre val for given geometry"""
+    if geometry.is_empty:
+        return None  
+    else:
+        new_geometry = force_2d(geometry)
+
+    return new_geometry.area
+
+def sample_features(feature_gdf, buffer_gdf, spacing):
+    """Sample points inside buffered point and find features underneath each point."""
+    # Generate grid of points inside buffer
+    points_gdf = sampling_area(buffer_gdf, spacing)
+    candidates = []
+    for point in points_gdf.geometry:
+        point_gdf = gpd.GeoDataFrame(geometry=[point], crs=buffer_gdf.crs)
+        buffered_point_gdf = gpd.GeoDataFrame(
+            geometry=point_gdf.buffer(float(50)),
+            crs=point_gdf.crs
+        )
+        features_under_point = find_and_sort_features(feature_gdf, buffered_point_gdf, point_gdf)[['type', 'depth', 'area', 'distance_m']]
+        if len(features_under_point)==1 and features_under_point.iloc[0]['distance_m'] > 50:
+            features_under_point = features_under_point.iloc[1:]
+        candidates.append({
+            "point": point_gdf,
+            "features": features_under_point
+        })
+    return candidates
+
+def sampling_area(buffer_gdf, spacing):
+    """Generate a grid of points spaced evenly inside buffer polygon."""
+    minx, miny, maxx, maxy = buffer_gdf.total_bounds
+    x_coords = np.arange(minx, maxx, spacing)
+    y_coords = np.arange(miny, maxy, spacing)
+
+    points = []
+    for x in x_coords:
+        for y in y_coords:
+            p = Point(x, y)
+            if buffer_gdf.contains(p).any():
+                points.append(p)
+
+    return gpd.GeoDataFrame(geometry=points, crs=buffer_gdf.crs)   
+
+def remove_duplicate_features(df):
+    """Remove duplicates in workings dfs"""
+    area_tolerance = 1e3
+    distance_tolerance = 1
+    depth_tolerance = 1
+    df = df.copy()
+    df['area_rounded'] = (df['area'] / area_tolerance).round().astype(int)
+    df['dist_rounded'] = (df['distance_m'] / distance_tolerance).round().astype(int)
+    df['depth_rounded'] = (df['depth'] / depth_tolerance).round().astype(int)
+    # Drop duplicates using the rounded columns
+    return df.drop_duplicates(subset=['area_rounded', 'depth_rounded', 'dist_rounded']).drop(
+        columns=['area_rounded', 'depth_rounded', 'dist_rounded']
+    ) 
+    
 if __name__ == '__main__':
     # case 1: result in one local authority
     result = get_local_authority([50.144072, -5.384586], 5000)

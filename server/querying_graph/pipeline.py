@@ -7,12 +7,13 @@ from .utils import dict_to_document
 import json
 
 class Pipeline:
-    def __init__(self, location, query, tag, client_id, coords):
+    def __init__(self, location, query, tag, client_id, coords, bibliography):
         self.location = location
         self.query = query
         self.tag = tag
         self.client_id = client_id
         self.coords = coords
+        self.bibliography = bibliography
         # TODO readd
         # self.scraper = Scraper(self.location, self.query)
         self.context_adder = ContextAdder(self.tag, self.client_id)
@@ -26,8 +27,9 @@ class Pipeline:
         self.docs = self.scraper.run()
 
     def add_context(self):
-        context = self.context_adder.run(self.client_id)
-        self.docs.append(context)
+        context, references = self.context_adder.run(self.client_id)
+        self.docs.extend(context)
+        self.bibliography.extend(references)
 
     def embed(self):
         # TODO temp to bypass scrape

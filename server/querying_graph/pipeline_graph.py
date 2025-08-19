@@ -17,8 +17,9 @@ def scrape_node(state: SessionState) -> SessionState:
 
 def add_context_node(state: SessionState) -> SessionState:
     context_adder = ContextAdder(state["tag"], state["client_id"])
-    context = context_adder.run()
-    state["docs"].append(context)
+    context, references = context_adder.run()
+    state["docs"].extend(context)
+    state["bibliography"].extend(references)
     return state
 
 def embed_node(state: SessionState) -> SessionState:

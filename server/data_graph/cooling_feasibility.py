@@ -18,6 +18,8 @@ class CoolingFeasibility:
 
     def get_mine_workings(self):
         # find mine workings depth and status
+            # TODO: look at equations for cooling - heat pumps and heat exchanger (https://www.mdpi.com/1996-1073/14/19/6215)
+            # TODO: look at ashrae conditions and work out formula for areal extent -> dc capacity -> cooling requirements -> temperature 
         pass
 
     def get_aquifer_status(self):
@@ -100,7 +102,23 @@ class CoolingFeasibility:
         return output
 
     def calculate_aquifer_suitability(self, productivity, flow_mecha, distance):
+        # TODO: make figure of aquifer suitability?
         return (productivity + flow_mecha - distance/20000 ) / 2
+    
+    def add_supplementary_information(self):
+        # TODO: link up
+        return """For a proposed groundwater-source, open-loop geothermal system (regardless of whether 
+aquifer or mine water derived), the Environment Agency (EA) is the principal regulator for 
+England. They are responsible for managing abstraction and reinjection applications and 
+licences.  
+It is advisable in the first instance to have a discussion with the EA about the proposed scheme. 
+They can therefore make the most up-to-date recommendations on the procedures needed to 
+be complied with.  
+At present, a number of consents, permits and licences will be required for a full-scale scheme 
+from the EA. These may include:  
+Groundwater Investigation Consent (WR32) 
+Abstraction licence  
+Reinjection/discharge permit (via an Environmental Permit)"""
 
 
     def run(self):

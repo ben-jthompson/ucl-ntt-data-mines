@@ -68,7 +68,7 @@ def render_header_footer(pdf: canvas.Canvas, doc):
 
 # Interactive images in footer using helper function
     logos_y = 20
-    render_interactive_image(pdf, "data/images/ucl-logo.png", "https://www.ucl.ac.uk/", uclwidth, imgheight, 30, logos_y)
-    render_interactive_image(pdf, "data/images/ntt-data-logo.png", "https://uk.nttdata.com/", nttwidth, imgheight, 50 + uclwidth, logos_y)
-    render_interactive_image(pdf, "data/images/github-logo.png", "https://github.com/ben-jthompson/ucl-ntt-data-mines", ghwidth, imgheight, 70 + uclwidth + nttwidth, logos_y
+    render_interactive_image(pdf, "data/images/ucl-logo.png", "https://www.ucl.ac.uk/", uclwidth, imgheight, 40, logos_y)
+    render_interactive_image(pdf, "data/images/ntt-data-logo.png", "https://uk.nttdata.com/", nttwidth, imgheight, 60 + uclwidth, logos_y)
+    render_interactive_image(pdf, "data/images/github-logo.png", "https://github.com/ben-jthompson/ucl-ntt-data-mines", ghwidth, imgheight, 80 + uclwidth + nttwidth, logos_y
     )

@@ -54,11 +54,6 @@ class Scraper:
         # ).json()
         # TODO brave api end
 
-        # TODO free search api
-        # ddg = DuckDuckGoSearchResults()
-        # response = ddg.invoke(self.query)
-        # TODO free search end
-
         # TODO cached response
         with open('outputs/ddgoutput.json', "w", encoding="utf-8") as f:
             json.dump(response, f, indent=4, ensure_ascii=False)

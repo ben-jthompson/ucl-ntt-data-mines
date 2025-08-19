@@ -7,6 +7,7 @@ class ContextAdder:
     def __init__(self, tag, client_id):
         self.tag = tag
         self.client_id = client_id
+        self.bibliography = None
 
     # find the documents uploaded by the user which are relevant
     def get_uploaded_files(self):
@@ -24,7 +25,7 @@ class ContextAdder:
                     metadata = json.load(f)
                     if self.tag in metadata.get('tags', []):
                         tagged_files.append(Document(page_content=metadata['description'], metadata={'url':path[:-10]}))
-
+                        self.bibliography.append({'file_name':metadata['file_name'], 'description':metadata['description'], 'tags':metadata['tags'], 'id':metadata['id'], 'user': True})
         for doc in tagged_files:
             self.handle_file_parsing(doc) 
 
@@ -38,6 +39,6 @@ class ContextAdder:
     def run(self):
         files = self.get_uploaded_files()
         relevant_files = self.find_tagged_files(files)
-        return relevant_files
+        return relevant_files, self.bibliography
 
     

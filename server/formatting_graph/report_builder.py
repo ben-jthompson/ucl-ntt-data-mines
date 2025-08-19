@@ -12,16 +12,17 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet
 from .formatter_utils import file_format_string, render_header_footer
-from .formatter_components import front_cover, figure, report_section, table
+from .formatter_components import front_cover, figure, report_section, table, bibliography
 
 
 class ReportBuilder:
-    def __init__(self, client_id: str, location: str, report_sections: List[Dict]):
+    def __init__(self, client_id: str, location: str, report_sections: List[Dict], bibliography: List[Dict]):
         self.date = dt.datetime.today()
         self.display_date = self.date.strftime("%d %B %Y")
         self.location = location
         self.client_id = client_id
         self.content = report_sections
+        self.bibliography = bibliography
         self.filename = self.format_filename()
         self.folder = os.path.join("server/reports", self.client_id, self.filename)
 
@@ -51,14 +52,14 @@ class ReportBuilder:
         # === Report sections ===
         for section in self.content:
             story.extend(report_section(section, self.doc))
+        print("BIB: ", self.bibliography)
+        story.extend(bibliography(self.bibliography))
 
         return story
 
     def get_metadata(self) -> dict:
         return {
-            "file_name": os.path.join(
-                os.getcwd(), "server/reports", self.client_id, self.filename
-            ),
+            "file_name": self.filename,
             "display_date": self.display_date,
             "date": self.date,
         }

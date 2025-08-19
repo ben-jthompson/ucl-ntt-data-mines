@@ -14,6 +14,16 @@ class EnvironmentalFeasibility:
             crs=self.point_gdf.crs
         )
         
+    # TODO: get geological distrubances nearby - and see 'REPORTABLE' bool to check whether important for subsidence concerns
+    def get_geological_disturbances(self):
+        geological_disturbances_map = read_and_convert_geojson_file('data/geojson/geological-disturbances-27700.geojson')
+        disturbances = find_and_sort_features(geological_disturbances_map, self.buffered_gdf, self.point_gdf)
+        print(disturbances[:10], disturbances.columns)
+        print(disturbances['cnjctrd'].value_counts())
+
+    def get_terrain_type(self):
+        # TODO: flag urban areas - if workings not far enough below, then problematic
+        pass
 
     def get_flood_risk(self):
         flood_risk_map = read_and_convert_geojson_file('data/geojson/Flood_Risk_Areas.json')
@@ -49,5 +59,5 @@ class EnvironmentalFeasibility:
 
 
 if __name__ == '__main__':
-    ef = EnvironmentalFeasibility([53.433331, -1.816667], 5000)
-    ef.get_flood_risk()
+    ef = EnvironmentalFeasibility([54.96433331, -1.616667], 5000)
+    ef.get_geological_disturbances()

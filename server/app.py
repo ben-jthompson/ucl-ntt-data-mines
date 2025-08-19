@@ -46,7 +46,7 @@ def upload_file(client_id):
     except Exception as e:
         return jsonify({"error": f"Failed to save file: {e}"}), 500
 
-    metadata = {'description': description, 'tags': tags, 'id': file_id}
+    metadata = {'file_name': file.filename, 'description': description, 'tags': tags, 'id': file_id, 'user':True}
     with open(f"{file_path}.meta.json", "w", encoding="utf-8") as f:
         json.dump(metadata, f, ensure_ascii=False, indent=2)
 

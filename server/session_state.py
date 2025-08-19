@@ -8,6 +8,7 @@ class SessionState(TypedDict, total=False):
     coords: Optional[Tuple[float, float]]
     buffer: Optional[int]
     report_sections: List[Any]
+    bibliography: List[Dict]
 
     # Spatial data phase
     region: Optional[Any]  

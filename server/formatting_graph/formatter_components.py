@@ -28,14 +28,14 @@ def front_cover(location: str) -> List:
 
 
 def report_section(section: Dict, doc) -> List:
-    """Generate flowables for one report section."""
+    """Generate report section."""
     topic = Paragraph(f"<b>{section['topic']}</b>", styles["Heading2"])
     section_start, section_end = split_paragraph_into_lines(section["explanation"], styles['Normal'], doc)
     return [KeepTogether([topic, Spacer(1, 12), Paragraph(section_start, styles['Normal'])]), Paragraph(section_end, styles['Normal']), Spacer(1, 24)]
 
 
 def table(data: List[List[str]], col_widths=None) -> Table:
-    """Generate a styled table flowable."""
+    """Generate a styled table."""
     table = Table(data, colWidths=col_widths)
     table.setStyle(
         TableStyle(
@@ -52,22 +52,17 @@ def table(data: List[List[str]], col_widths=None) -> Table:
     return table
 
 
-def figure(image_path: str, width: int = 200, height: int = 150) -> Image:
-    """Insert an image (figure) into the report."""
+def figure(image_path: str, width: int, height: int) -> Image:
+    """Insert image into report."""
     return Image(image_path, width, height)
 
-
-def header_footer(pdf: canvas.Canvas, doc):
-    """Draw header and footer for each page."""
-    pdf.setFont("Helvetica-Bold", 11)
-
-    # Header
-    header_y = HEIGHT - 50
-    pdf.line(40, header_y, WIDTH - 40, header_y)
-    pdf.drawString(40, HEIGHT - 40, f"{getattr(doc, 'header_string', 'Feasibility Report')}")
-
-    # Footer
-    footer_y = 50
-    pdf.line(40, footer_y, WIDTH - 40, footer_y)
-    page_num = pdf.getPageNumber()
-    pdf.drawRightString(WIDTH - 40, 40, str(page_num))
+def bibliography(bibliography: List[Dict]):
+    references = []
+    references.append(Paragraph("<b>References</b>", styles['Heading3']))
+    for reference in bibliography:
+        if reference.get('user'):
+            para = Paragraph(f"<b>{reference['file_name']}</b> (uploaded by user)", styles["Normal"])
+        else:
+            para = Paragraph(f'<b>{reference["file_name"]}</b> (sourced from  <a href="{reference["link"]}">{reference["link"]}</a>)', styles["Normal"])
+        references.append(para)
+    return references

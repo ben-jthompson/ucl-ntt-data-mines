@@ -3,16 +3,20 @@ from langgraph.graph import StateGraph
 from .data_pipeline_funcs import get_local_authority
 from .cooling_feasibility import CoolingFeasibility
 from .environmental_feasibility import EnvironmentalFeasibility
-from ..session_state import SessionState    
+from .mine_feasibility import MineFeasibility
+from ..session_state import SessionState 
+import json   
 
 def region_node(state: SessionState) -> SessionState:
-    print('Moving to region node...')
     state['region'] = get_local_authority(state['coords'], state['buffer'])
     state['current'] = 'cooling'
     return state
 
+def mining_node(state: SessionState) -> SessionState:
+    mining = MineFeasibility(state['coords'], state['buffer'])
+    return state
+
 def cooling_node(state: SessionState) -> SessionState:
-    print('Moving to cooling node...')
     cooler = CoolingFeasibility(state['coords'], state['buffer'])
     # TODO: get outputs
     aquifer_dict = cooler.get_aquifer_status()
@@ -21,7 +25,6 @@ def cooling_node(state: SessionState) -> SessionState:
     return state
 
 def environmental_node(state: SessionState) -> SessionState:
-    print('Moving to environmental node...')
     environmental = EnvironmentalFeasibility(state['coords'], state['buffer'])
     flood_risk_dict = environmental.get_flood_risk()
     state['suitability'].append(flood_risk_dict)
@@ -49,3 +52,10 @@ def formatting_node(state: SessionState) -> SessionState:
     state['report_sections'].append({'Data Queries': entry})
     state['current'] = 'data_end'
     return state
+
+def data_bibliography(state: SessionState) -> SessionState:
+    with open("data_references.json", "r") as f:
+        metadata = json.load(f)
+        for entry in metadata:
+            state['bibliography'].append({'file_name': entry['file'], 'link': entry['link']})
+
