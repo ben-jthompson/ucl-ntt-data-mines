@@ -54,6 +54,7 @@ export default function ContextValidation({
     fullAddress: "",
   });
   // Resources found from the internet
+  // TODO: delete all this
   type foundResource = {
     file: string;
     source: string;

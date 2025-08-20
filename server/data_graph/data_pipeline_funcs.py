@@ -91,7 +91,13 @@ def find_average_depth(geometry):
     """Extract average height from MultiPolygon"""
     if geometry.is_empty:
         return None
-
+    
+    if isinstance(geometry, Point):
+        if geometry.has_z:
+            return geometry.z
+        else:
+            return None
+        
     z_values = []
     for polygon in geometry.geoms:
         for x, y, z in polygon.exterior.coords:
@@ -106,6 +112,8 @@ def find_geometry_area(geometry):
     """Estimate square metre val for given geometry"""
     if geometry.is_empty:
         return None  
+    elif isinstance(geometry, Point):
+        return 0.0
     else:
         new_geometry = force_2d(geometry)
 
@@ -173,3 +181,8 @@ if __name__ == '__main__':
     # case 4: overlapping authorities
     result = get_local_authority([51.476670, -0.184388], 5000)
     print('Result 4: ', result)
+
+def convert_point_to_coords(point: GeoDataFrame):
+    point_coords = point.to_crs(epsg=4326)
+    lat, lng = point_coords.geometry.y.iloc[0], point_coords.geometry.x.iloc[0]
+    return int(round(lat, 2)*100)/100, int(round(lng, 2)*100)/100

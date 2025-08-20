@@ -20,6 +20,12 @@ class EnvironmentalFeasibility:
         disturbances = find_and_sort_features(geological_disturbances_map, self.buffered_gdf, self.point_gdf)
         print(disturbances[:10], disturbances.columns)
         print(disturbances['cnjctrd'].value_counts())
+        return self.process_geological_disturbances(disturbances)
+
+    def process_geological_disturbances(self):
+        output = {'topic':'Geological Disturbances', 'risk': None, 'explanation': None}
+        # TODO: fill in
+
 
     def get_terrain_type(self):
         # TODO: flag urban areas - if workings not far enough below, then problematic

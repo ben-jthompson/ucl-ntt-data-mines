@@ -1,12 +1,51 @@
 from ..session_state import SessionState
 from .report_builder import ReportBuilder
+from langchain_openai import ChatOpenAI
+from langchain.schema import SystemMessage, HumanMessage
 import json
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+api_key = os.getenv('OPENAI_API_KEY')
+llm = ChatOpenAI(model="gpt-4o-mini", temperature = 0, api_key=api_key)
 
 def text_compilation_node(state: SessionState) -> SessionState:
-    # TODO: make cgpt rewrite all the automatically produced content?
-    # TODO: prompt 'only write the response with no other comments'
-    pass
+    """
+    Rewrites the 'explanation', 'risk', and 'suitability' fields in each report section
+    using the provided llm.
+    """
+    report_sections = state.get("report_sections", [])
+    rewritten_sections = []
+
+    for section in report_sections:
+        rewritten_section = section.copy()
+
+        for key in ["explanation", "risk", "suitability"]:
+            if key in section and section[key]:
+                original_text = section[key]
+
+                # Prepare LangChain messages
+                messages = [
+                    SystemMessage(content="You are a professional technical report writer, writing a feasibility report on different aspects affecting suitability of data centre placement within coal mines."),
+                    HumanMessage(
+                        content=(
+                            "Rewrite the following text for clarity and conciseness, keeping the meaning exactly the same. Return only the rewritten text with no extra commentary:\n\n"
+                            f"{original_text}"
+                        )
+                    )
+                ]
+
+                new_text = llm.invoke(messages)
+                print(new_text)
+                # TODO: test"
+        #         rewritten_section[key] = new_text
+
+        # rewritten_sections.append(rewritten_section)
+
+    state["report_sections"] = rewritten_sections
+    return state
+
 
 def pdf_creation_node(state: SessionState) -> SessionState:
     report_builder = ReportBuilder(client_id=state['client_id'], location=state['location'], report_sections=state['report_sections'], bibliography=state['bibliography'])

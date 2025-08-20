@@ -6,9 +6,10 @@ import datetime as dt
 import matplotlib.pyplot as plt
 import contextily as ctx
 import datetime as dt
+from pyproj import Transformer
 from shapely.geometry import Point
-from .data_pipeline_funcs import find_and_sort_features, read_and_convert_geojson_file, find_average_depth, find_geometry_area, sample_features, remove_duplicate_features
-
+from .data_pipeline_funcs import find_and_sort_features, read_and_convert_geojson_file, find_average_depth, find_geometry_area, sample_features, remove_duplicate_features, convert_point_to_coords
+from ..formatting_graph.formatter_utils import file_format_string
 
 class MineFeasibility:
     def __init__(self, coords, buffer, client_id):
@@ -54,11 +55,10 @@ class MineFeasibility:
         probable_workings = find_and_sort_features(probable_workings_map, self.buffered_gdf, self.point_gdf)
         underground_workings.drop('index_right', axis=1, inplace=True)
         probable_workings.drop('index_right', axis=1, inplace=True)
-
         underground_workings['depth'] = underground_workings['geometry'].apply(find_average_depth)
         underground_workings['area'] = underground_workings['geometry'].apply(find_geometry_area)
-        # spacing = self.buffer/20 TODO: readd
-        self.candidates = sample_features(feature_gdf=underground_workings, buffer_gdf=self.buffered_gdf, spacing=1000)
+        spacing = self.buffer/5
+        self.candidates = sample_features(feature_gdf=underground_workings, buffer_gdf=self.buffered_gdf, spacing=spacing)
         for idx, candidate in enumerate(self.candidates):
             if len(candidate['features']) < 2 or candidate['features']['depth'].mean() > -100:
                 # look for probable workings if not enough documented workings
@@ -68,7 +68,7 @@ class MineFeasibility:
             )
                 filtered_probable_workings = find_and_sort_features(probable_workings, buffered_point_gdf, candidate['point'])
                 filtered_probable_workings['area'] = filtered_probable_workings['geometry'].apply(find_geometry_area)
-                if len(filtered_probable_workings) == 1 and filtered_probable_workings.iloc[0]['distance_m']>50:
+                if len(filtered_probable_workings) == 1 and filtered_probable_workings.iloc[0]['distance_m']>100:
                     continue
                 else:
                     df = []
@@ -83,8 +83,11 @@ class MineFeasibility:
                 sds = ''
         self.derive_mine_working_ranks()
         now = str(dt.datetime.now())
-        self.image_path = os.path.join(os.getcwd(), 'server/uploads', self.client_id, f'mine_img{now}.png')
+        image_dir = os.path.join(os.getcwd(), 'server/uploads', str(self.client_id))
+        os.makedirs(image_dir, exist_ok=True)
+        self.image_path = os.path.join(image_dir, file_format_string(f'mine_img{now}'))
         self.produce_mine_image()   
+        self.render_mining_text()
     #     candidates.to_file(
     #     'data/candidates_cropped.json',
     # )
@@ -94,8 +97,7 @@ class MineFeasibility:
         # TODO: if only working above water level is probable working, then caution
         # TODO: calculate range, min, max, energy differential via temperature coalfields
             if not candidate:
-                print('Returning...')
-                return
+                return 0, 'No features present'
             notes = []
             probables = len(candidate['features'][candidate['features']['type']=='Probable'])
             non_probables = len(candidate['features'][candidate['features']['type']!='Probable'])
@@ -105,11 +107,11 @@ class MineFeasibility:
             # groundwater_level =
             # possible_differentials = (compare differentials with temperature)
             total = len(candidate['features'])
-            if total == 0:
-                return
+            if total == 0: 
+                return 0, 'No features present'
             probables_ratio = probables/total
             if probables > 0:
-                notes.append("Probable working areas derived from knowledge of areas which were being mined before or around 1872. Data has been estimated from available mining records by qualified mining surveyors.")
+                notes.append("DISCLAIMER: Probable working areas derived from knowledge of areas which were being mined before or around 1872. Data has been estimated from available mining records by qualified mining surveyors.")
             if probables == 0:
                 notes.append('There are overlapping, recorded workings.')
                 workings = 10
@@ -127,21 +129,71 @@ class MineFeasibility:
                 else:
                     notes.append(f"There are only a few workings identified or expected in the area - nearest distance is {min(distances)}")
                     workings = 2
-            return workings, notes
 
+            # TODO: add temperature gradient calcs
+            return workings, notes
+        self.max_score = [0, 0] # [top score, num achievers]
+        self.all_scores = []
+        temp_grad_map = read_and_convert_geojson_file('data/geojson/coalfield-temperature-gradients.geojson')
+        temp_grad = find_and_sort_features(temp_grad_map, self.buffered_gdf, self.point_gdf)[0]
         for candidate in self.candidates:
             candidate['score'], candidate['notes'] = calculate_score(candidate)
+            self.all_scores.append(candidate['score'])
+            if candidate['score'] > self.max_score[0]:
+                self.max_score[0] = candidate['score']
+                self.max_score[1] = 1 
+            elif candidate['score'] == self.max_score:
+                self.max_score[1] += 1
+
         
     def render_mining_text(self):
-        pass
+        average_score = round(sum(self.all_scores)/len(self.all_scores), 2)
+        explanation = f'Over the highlighted area, the average suitability score based on mine features is {average_score}, '
+        if average_score > 75:
+            explanation += 'meaning that many mine formations in the area would be good for data centre placement - owing to many overlapping, verified features, which can facilitate mine water heat transfer and cooling operations. '
+        elif average_score > 50:
+            explanation += 'meaning that some mine formations in the area would be good for data centre placement - owing to overlapping features, which can facilitate mine water heat transfer and cooling operations. '
+        elif average_score > 20:
+            explanation += 'meaning that few mine formations in the area would be good for data centre placement - owing to overlapping features, which can facilitate mine water heat transfer and cooling operations. '
+        else:
+            explanation += 'meaning that there is little opportunity for data centre placement - many areas may have few, or no overlapping workings, limiting the potential for mine water heat transfer and cooling.'
+        # if self.max_score[1] == 1:
+        for candidate in self.candidates:
+            if candidate['score'] == self.max_score[0]:
+                lat, lng = convert_point_to_coords(candidate['point'])
+                cand_coords = (lat, lng)
+                ew = 'east' if cand_coords[1] >= self.coords[1] else 'west'
+                ns = 'north' if cand_coords[0] >= self.coords[0] else 'south'
+                str_cand = [str(coord) for coord in cand_coords]
+                explanation += f'The max suitability score across the sampled points (as seen on the figure below) was {self.max_score[0]} - located in the {ns}{ew} quadrant, at {str_cand[0]}N, {str_cand[1]}E). Site choice explanation: {candidate['notes']}'
+                print(explanation)
+                break
+        # else:
+        #     while self.max_score[1] > 0:
+        #         for candidate in self.candidates:
+        #             if candidate['score'] == self.max_score:
+        #                 explanation += f""
 
     def produce_mine_image(self):
-
-        centre_point = gpd.GeoSeries([Point(self.coords)], crs='EPSG:27700').to_crs(epsg=3857).iloc[0]
-        radius = (self.buffer + 1000) / 2
-
         fig, ax = plt.subplots(figsize=(10, 10))
-        self.candidates.plot(
+        
+        points = []
+        scores = []
+
+        for candidate in self.candidates:
+            point = candidate["point"].geometry.iloc[0] 
+            points.append(point)
+            scores.append(candidate.get("score", 0))
+        plot_gdf = gpd.GeoDataFrame(
+            {"score": scores},
+            geometry=points,
+            crs=self.candidates[0]["point"].crs
+        )
+        plot_gdf = plot_gdf.to_crs(epsg=3857)
+        plot_gdf_latlng = plot_gdf.to_crs(epsg=4326)
+        plot_gdf["lng"] = plot_gdf_latlng.geometry.x
+        plot_gdf["lat"] = plot_gdf_latlng.geometry.y
+        plot_gdf.plot(
             ax=ax,
             column="score",
             marker="*",
@@ -151,10 +203,22 @@ class MineFeasibility:
             legend_kwds={'label': "Suitability Score", 'shrink': 0.6}
         )
 
-        ax.set_xlim(centre_point.x - radius, centre_point.x + radius)
-        ax.set_ylim(centre_point.y - radius, centre_point.y + radius)
-        ctx.add_basemap(ax, crs=self.candidates.crs, source=ctx.providers.Esri.WorldStreetMap, alpha=0.75)
-        ax.set_axis_off()
+        xmin, xmax = ax.get_xlim()
+        ymin, ymax = ax.get_ylim()
+
+        transformer = Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True)
+
+        lng_min, lat_min = transformer.transform(xmin, ymin)
+        lng_max, lat_max = transformer.transform(xmax, ymax)
+
+        # Update axis labels
+        ax.set_xticks([xmin, xmax])
+        ax.set_xticklabels([f"{lng_min:.2f}", f"{lng_max:.2f}"])
+
+        ax.set_yticks([ymin, ymax])
+        ax.set_yticklabels([f"{lat_min:.2f}", f"{lat_max:.2f}"])
+        ctx.add_basemap(ax, crs='EPSG:3857', source=ctx.providers.Esri.WorldStreetMap, alpha=0.75)
+        # ax.set_axis_off()
         plt.tight_layout()
         plt.savefig(self.image_path, dpi=300)
         plt.close(fig)
@@ -264,5 +328,5 @@ class MineFeasibility:
         self.identify_abandonment_plans()
 
 if __name__ == "__main__":
-    ma = MineFeasibility([54.96, -1.61], 5000, 123455)
+    ma = MineFeasibility([53.37, -1.46], 5000, 123455)
     ma.get_nearby_workings()

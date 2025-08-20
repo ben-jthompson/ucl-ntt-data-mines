@@ -61,6 +61,8 @@ export default function Setup({
   const [capacity, setCapacity] = useState<string>("");
   const [widget, setWidget] = useState(false);
   const [address, setAddress] = useState<Address>({});
+  // TODO: check this works (ie, click on coastal mine)!
+  const [UKBound, setUKBound] = useState<FeatureCollection | null>(null);
   const [mineExtent, setMineExtent] = useState<FeatureCollection | null>(null);
 
   const handleWidgetOpen = () => {
@@ -98,10 +100,15 @@ export default function Setup({
               (boundingbox[2] + boundingbox[3]) / 2,
             ];
             console.log("API Coords: ", geocodedCoords);
-            if (isInsideBound({ coords: geocodedCoords, bound: mineExtent })) {
+            if (
+              isInsideBound({ coords: geocodedCoords, bound: mineExtent }) &&
+              isInsideBound({ coords: geocodedCoords, bound: UKBound })
+            ) {
               setCoords(geocodedCoords);
             } else {
-              alert("Response invalid or not in bounds of UK mines.");
+              alert(
+                "Response invalid or not in bounds of UK mines (coastal mines unsuitable)."
+              );
             }
           } else {
             let backupQuery = "";
@@ -166,6 +173,10 @@ export default function Setup({
         const geojson = res.data as FeatureCollection;
         setMineExtent(geojson);
       });
+  }, []);
+
+  useEffect(() => {
+    axios.get("geojson/uk.geo.json").then((res) => setUKBound(res.data));
   }, []);
 
   return (

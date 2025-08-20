@@ -11,7 +11,7 @@ class Querier:
     def __init__(self, retriever, query):
         self.query = query
         self.api_key = api_key
-        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature = 0, api_key=api_key)
+        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature = 0, api_key=self.api_key)
         self.retriever = MultiQueryRetriever.from_llm(llm=self.llm, retriever=retriever)
 
     def query_vector_db(self):

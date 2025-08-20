@@ -26,6 +26,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<string | null>(null);
   useEffect(() => {
+    // TODO: replace localhost!
     const clientId = localStorage.getItem("clientId");
     axios
       .get(`http://localhost:8080/api/reports/${clientId}`)
