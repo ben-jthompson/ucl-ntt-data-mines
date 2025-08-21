@@ -186,3 +186,84 @@ def convert_point_to_coords(point: GeoDataFrame):
     point_coords = point.to_crs(epsg=4326)
     lat, lng = point_coords.geometry.y.iloc[0], point_coords.geometry.x.iloc[0]
     return int(round(lat, 2)*100)/100, int(round(lng, 2)*100)/100
+
+def sizing_from_mine_water(
+    Q_watts: float,
+    T_source_C: float,
+    T_target_C: float = 35.0,
+    lift_m: float = 100.0,
+    user_deltaT_C: float | None = None,
+    cp: float = 4186.0,
+    rho: float = 1000.0,
+    g: float = 9.81,
+    pump_efficiency: float = 0.65,
+) -> dict:
+    """
+    Determine flow and pump power to remove Q_watts of heat using mine water.
+
+    Args:
+      Q_watts: desired heat removal (W), e.g. 600000 for 600 kW.
+      T_source_C: temperature of mine water (°C).
+      T_target_C: data centre setpoint temperature (°C). Default 35°C.
+      lift_m: vertical difference the water must be pumped (m).
+      user_deltaT_C: optional temperature rise of the cooling water allowed (°C).
+                     If None, uses the full possible rise = T_target - T_source (max).
+      cp: specific heat (J/kg·K) — default 4186 for water.
+      rho: density (kg/m³) — default 1000 for water.
+      g: gravity (m/s²) — default 9.81.
+      pump_efficiency: pump efficiency (0-1). Default 0.65.
+
+    Returns:
+      dict with:
+        'feasible' (bool),
+        'deltaT_used_C',
+        'mass_flow_kg_s',
+        'vol_flow_l_s',
+        'pump_power_W',
+        'pump_power_kW',
+        'notes'
+    """
+    # check feasibility
+    Tmax_possible = T_target_C - T_source_C
+    if Tmax_possible <= 0:
+        return {
+            "feasible": False,
+            "notes": (
+                f"Source water ({T_source_C}°C) is not colder than the data centre "
+                f"permitted temp ({T_target_C}°C). Cannot provide cooling by simple heat exchange."
+            ),
+        }
+
+    # choose deltaT
+    if user_deltaT_C is None:
+        deltaT = Tmax_possible
+    else:
+        # cannot exceed physical max
+        deltaT = min(user_deltaT_C, Tmax_possible)
+        if deltaT <= 0:
+            return {
+                "feasible": False,
+                "notes": "Requested deltaT is not positive or not physically possible with given temperatures.",
+            }
+
+    # mass flow (kg/s) required to remove Q_watts with given deltaT:
+    m_dot = Q_watts / (cp * deltaT)   # kg/s
+
+    vol_m3_s = m_dot / rho
+    vol_l_s = vol_m3_s * 1000.0
+
+    # pump hydraulic power (W) to lift water height lift_m (gravity only)
+    # Note: include pump efficiency
+    pump_power_W = (rho * g * lift_m * vol_m3_s) / max(pump_efficiency, 1e-6)
+    pump_power_kW = pump_power_W / 1000.0
+
+    return {
+        "feasible": True,
+        "deltaT_used_C": deltaT,
+        "vol_flow_l_s": vol_l_s,
+        "pump_power_kW": pump_power_kW,
+        "notes": (
+            "Hydraulic pump power above is gravitational lift only. Add friction/head losses to get "
+            "actual pump specification. Also check heat exchanger approach and allowed return temperatures."
+        ),
+    }

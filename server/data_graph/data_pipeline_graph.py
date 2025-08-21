@@ -9,11 +9,12 @@ import json
 
 def region_node(state: SessionState) -> SessionState:
     state['region'] = get_local_authority(state['coords'], state['buffer'])
-    state['current'] = 'cooling'
+    state['current'] = 'mining'
     return state
 
 def mining_node(state: SessionState) -> SessionState:
     mining = MineFeasibility(state['coords'], state['buffer'])
+    state['current'] = 'cooling'
     return state
 
 def cooling_node(state: SessionState) -> SessionState:
@@ -28,10 +29,10 @@ def environmental_node(state: SessionState) -> SessionState:
     environmental = EnvironmentalFeasibility(state['coords'], state['buffer'])
     flood_risk_dict = environmental.get_flood_risk()
     state['suitability'].append(flood_risk_dict)
-    state['current'] = 'formatting'
+    state['current'] = 'data_formatting'
     return state
 
-def formatting_node(state: SessionState) -> SessionState:
+def data_formatting_node(state: SessionState) -> SessionState:
     risk_dict = {
         'High': '#FF0000',
         'Moderate': '#FFA500',

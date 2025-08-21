@@ -1,6 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 import random
+import numpy as np
 import os
 import datetime as dt
 import matplotlib.pyplot as plt
@@ -8,7 +9,7 @@ import contextily as ctx
 import datetime as dt
 from pyproj import Transformer
 from shapely.geometry import Point
-from .data_pipeline_funcs import find_and_sort_features, read_and_convert_geojson_file, find_average_depth, find_geometry_area, sample_features, remove_duplicate_features, convert_point_to_coords
+from .data_pipeline_funcs import find_and_sort_features, read_and_convert_geojson_file, find_average_depth, find_geometry_area, sample_features, remove_duplicate_features, convert_point_to_coords, sizing_from_mine_water
 from ..formatting_graph.formatter_utils import file_format_string
 
 class MineFeasibility:
@@ -22,7 +23,7 @@ class MineFeasibility:
             geometry=self.point_gdf.buffer(float(buffer)),
             crs=self.point_gdf.crs
         )
-        pass
+        self.output = []
 
     #TODO: https://www.gov.uk/guidance/coal-mining-records-data-deeds-and-documents - summarise
     #TODO: USE FOR HELP: https://www.gov.uk/government/publications/apply-to-license-coal-mining-data/available-coal-mining-data-sets 
@@ -44,9 +45,9 @@ class MineFeasibility:
     # TODO: future license may have been revoked - check (https://www.gov.uk/government/publications/coal-mining-data-licence-areas/licence-areas-data-set-user-guide)
     def get_nearby_workings(self):
         probable_workings_mapping = {
-            'Shallow': 20,
-            'Moderate': 65,
-            'Considerable': 200
+            'Shallow': random.randint(0, 30),
+            'Moderate': random.randint(30, 100),
+            'Considerable': random.randint(100, 300)
         }
 
         underground_workings_map = read_and_convert_geojson_file('data/geojson/underground-workings-27700.geojson')
@@ -87,13 +88,11 @@ class MineFeasibility:
         os.makedirs(image_dir, exist_ok=True)
         self.image_path = os.path.join(image_dir, file_format_string(f'mine_img{now}'))
         self.produce_mine_image()   
-        self.render_mining_text()
-    #     candidates.to_file(
-    #     'data/candidates_cropped.json',
-    # )
+        self.output.append(self.render_mining_text())
+#
 
     def derive_mine_working_ranks(self):
-        def calculate_score(candidate):
+        def calculate_score(candidate, temp_grad):
         # TODO: if only working above water level is probable working, then caution
         # TODO: calculate range, min, max, energy differential via temperature coalfields
             if not candidate:
@@ -101,11 +100,13 @@ class MineFeasibility:
             notes = []
             probables = len(candidate['features'][candidate['features']['type']=='Probable'])
             non_probables = len(candidate['features'][candidate['features']['type']!='Probable'])
+            non_prob_min = []
+            prob_min = []
             if non_probables > 0:
                 non_prob_mean = candidate['features'][candidate['features']['type']!='Probable']['depth'].mean()
-                non_prob_min = candidate['features'][candidate['features']['type']!='Probable']['depth'].max()
-            # groundwater_level =
-            # possible_differentials = (compare differentials with temperature)
+                non_prob_min = candidate['features'][candidate['features']['type']!='Probable']['depth'].nlargest(2).to_list()
+            if probables > 0:
+                prob_min = candidate['features'][candidate['features']['type']=='Probable']['depth'].nlargest(2).to_list()
             total = len(candidate['features'])
             if total == 0: 
                 return 0, 'No features present'
@@ -114,36 +115,102 @@ class MineFeasibility:
                 notes.append("DISCLAIMER: Probable working areas derived from knowledge of areas which were being mined before or around 1872. Data has been estimated from available mining records by qualified mining surveyors.")
             if probables == 0:
                 notes.append('There are overlapping, recorded workings.')
-                workings = 10
+                workings = 100
             elif total - probables >= 5:
                 notes.append(f'There are multiple, overlapping, recorded workings - however, they are worked at an average of {-non_prob_mean}m below ground, which can pose problems for drilling and setting up data centres.')
-                workings = 6
+                workings = 60
             elif probables_ratio > 0.5:
                 notes.append(f"Most data of workings is unverified - they are likely present, but depth values are estimated and further surveying would be required.")
-                workings = 4
+                workings = 40
             else:
                 distances = [dist for dist in candidate['features']['distance_m']]
                 if min(distances) < 50:
                     notes.append(f"There are few workings identified or expected in the area - nearest distance is {min(distances)}m")
-                    workings = 1
+                    workings = 10
                 else:
                     notes.append(f"There are only a few workings identified or expected in the area - nearest distance is {min(distances)}")
-                    workings = 2
+                    workings = 20
 
-            # TODO: add temperature gradient calcs
+            if not temp_grad.get('Type'):
+                notes.append("Caution: mine water temperature data is unknown for this region. Calculations have been produced via average water temperature calculations, and will need to be verified.")
+            if non_prob_min and len(non_prob_min)>1:
+                depth_str = int(np.round(non_prob_min[1] / 100.0) * 100)
+                depth_str = str(depth_str) if depth_str < -100 else "-100"
+                temp = f"T{depth_str[1:]}m_Equi"
+                temperature = temp_grad[temp]
+                mine_water_calc_non_prob = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(non_prob_min[1]-non_prob_min[0]))
+                if mine_water_calc_non_prob['feasible'] == False:
+                    notes.append(mine_water_calc_non_prob['notes'])
+                    workings *= 0.1
+                else: 
+                    notes.append(f"For a 500kW data centre with 595kW of cooling demand, siting data centre at working at {abs(np.round(non_prob_min[0], 2))}m below ground level would require {np.round(mine_water_calc_non_prob['vol_flow_l_s'], 2)} litres per second to be pumped via a heat exchanger. Groundwater data is not available, but, assuming the confirmed nearest working at {abs(np.round(non_prob_min[1], 2))}m is flooded, the energy required to pump the water for heat exchange would be {np.round(mine_water_calc_non_prob['pump_power_kW'], 1)}kW.")
+
+                    workings-=(mine_water_calc_non_prob['vol_flow_l_s']+mine_water_calc_non_prob['pump_power_kW'])
+            elif prob_min and len(prob_min)>1:
+                depth_str = int(np.round(prob_min[1] / 100.0) * 100)
+                depth_str = str(depth_str) if depth_str < -100 else "-100"
+                temp = f"T{depth_str[1:]}m_Equi"
+                temperature = temp_grad[temp]
+                mine_water_calc_prob = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(prob_min[1]-prob_min[0]))
+                if mine_water_calc_prob['feasible'] == False:
+                    notes.append(mine_water_calc_prob['notes'])
+                    workings *= 0.1
+                else:
+                    notes.append(f"For a 500kW data centre with 595kW of cooling demand, siting data centre at working at {abs(np.round(prob_min[0], 2))}m below ground level would require {np.round(mine_water_calc_prob['vol_flow_l_s'], 2)} litres per second to be pumped via a heat exchanger. However, groundwater data is not available, meaning that knowing whether workings are flooded or not requires more data; also as the working is not explicitly georeferenced, the depth value is indicative - but mine water temperatures and energy calculations should be similar.")
+                    workings-=(mine_water_calc_prob['vol_flow_l_s']+mine_water_calc_prob['pump_power_kW'])
+                    workings*=0.9
+            elif len(prob_min) == 1 and len(non_prob_min) == 1:
+                vals = [prob_min[0], non_prob_min[0]]
+                depth_str = int(np.round(max(vals) / 100.0) * 100)
+                depth_str = str(depth_str) if depth_str < -100 else "-100"
+                temp = f"T{depth_str[1:]}m_Equi"
+                temperature = temp_grad[temp]
+                mine_water_calc = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(max(vals)-min(vals)))
+                if mine_water_calc['feasible'] == False:
+                    notes.append(mine_water_calc['notes'])
+                    workings *= 0.1
+                else:
+                    notes.append(f"For a 500kW data centre with 595kW of cooling demand, siting data centre at working at {abs(np.round(max(vals), 2))}m below ground level would require {np.round(mine_water_calc['vol_flow_l_s'], 2)} litres per second to be pumped via a heat exchanger. However, groundwater data is not available, meaning that knowing whether workings are flooded or not requires more data; also as one of the workings is not explicitly georeferenced, the depth value may be indicative - but mine water temperatures and energy calculations should be similar.")
+                    workings-=(mine_water_calc['vol_flow_l_s']+mine_water_calc['pump_power_kW'])
+                    workings*=0.95
+            elif non_prob_min == None and prob_min == None:
+                notes.append("No mine features found under this specific point.")
+                workings=0
+            else:
+                val1 = prob_min[0] if prob_min and len(prob_min) > 0 else None
+                val2 = non_prob_min[0] if non_prob_min and len(non_prob_min) > 0 else None
+
+                # Only consider the non-None values
+                vals = [v for v in [val1, val2] if v is not None]
+                depth_str = int(np.round(vals[0] / 100.0) * 100)
+                depth_str = str(depth_str) if depth_str < -100 else "-100"
+                temp = f"T{depth_str[1:]}m_Equi"
+                temperature = temp_grad[temp]
+                mine_water_calc = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=0)
+                
+                notes.append(f"Only one working found beneath this point, at {-(np.round(vals[0]))}m below ground level.")
+                workings*= 0.3
+            
             return workings, notes
-        self.max_score = [0, 0] # [top score, num achievers]
+        self.max_score = 0 
         self.all_scores = []
         temp_grad_map = read_and_convert_geojson_file('data/geojson/coalfield-temperature-gradients.geojson')
-        temp_grad = find_and_sort_features(temp_grad_map, self.buffered_gdf, self.point_gdf)[0]
+        temp_grad = find_and_sort_features(temp_grad_map, self.buffered_gdf, self.point_gdf)
+        row_found = None
+        for i, (_, row) in enumerate(temp_grad.iterrows()):
+            if row['Equilibr_1'] != 'No_Data':
+                row_found = row
+                break
+            if i == len(temp_grad) - 1: 
+                row_found = { "properties":{"Equilibriu": "Yes", "Equilibr_1": "Measured", "T100m_Equi": 11.7, "T100m_Eq_1": 0.0, "T100m_Eq_2": 0.0, "T200m_Equi": 13.6, "T200m_Eq_1": 0.0, "T200m_Eq_2": 0.0, "T300m_Equi": 15.4, "T300m_Eq_1": 0.0, "T300m_Eq_2": 0.0, "T400m_Equi": 17.3, "T400m_Eq_1": 0.0, "T400m_Eq_2": 0.0, "T500m_Equi": 19.1, "T500m_Eq_1": 0.0, "T500m_Eq_2": 0.0, "T600m_Equi": 21.0, "T600m_Eq_1": 0.0, "T600m_Eq_2": 0.0, "T700m_Equi": 22.9, "T700m_Eq_1": 0.0, "T700m_Eq_2": 0.0, "T800m_Equi": 24.7, "T800m_Eq_1": 0.0, "T800m_Eq_2": 0.0, "T900m_Equi": 26.6, "T900m_Eq_1": 0.0, "T900m_Eq_2": 0.0, "T1000m_Equ": 28.5, "T1000m_E_1": 0.0, "T1000m_E_2": 0.0}}
+        temp_grad = row_found
+
+
         for candidate in self.candidates:
-            candidate['score'], candidate['notes'] = calculate_score(candidate)
+            candidate['score'], candidate['notes'] = calculate_score(candidate, temp_grad)
             self.all_scores.append(candidate['score'])
-            if candidate['score'] > self.max_score[0]:
-                self.max_score[0] = candidate['score']
-                self.max_score[1] = 1 
-            elif candidate['score'] == self.max_score:
-                self.max_score[1] += 1
+            if candidate['score'] > self.max_score:
+                self.max_score = candidate['score']
 
         
     def render_mining_text(self):
@@ -157,17 +224,15 @@ class MineFeasibility:
             explanation += 'meaning that few mine formations in the area would be good for data centre placement - owing to overlapping features, which can facilitate mine water heat transfer and cooling operations. '
         else:
             explanation += 'meaning that there is little opportunity for data centre placement - many areas may have few, or no overlapping workings, limiting the potential for mine water heat transfer and cooling.'
-        # if self.max_score[1] == 1:
         for candidate in self.candidates:
-            if candidate['score'] == self.max_score[0]:
+            if candidate['score'] == self.max_score:
                 lat, lng = convert_point_to_coords(candidate['point'])
                 cand_coords = (lat, lng)
                 ew = 'east' if cand_coords[1] >= self.coords[1] else 'west'
                 ns = 'north' if cand_coords[0] >= self.coords[0] else 'south'
                 str_cand = [str(coord) for coord in cand_coords]
-                explanation += f'The max suitability score across the sampled points (as seen on the figure below) was {self.max_score[0]} - located in the {ns}{ew} quadrant, at {str_cand[0]}N, {str_cand[1]}E). Site choice explanation: {candidate['notes']}'
-                print(explanation)
-                break
+                explanation += f'The max suitability score across the sampled points (as seen on the figure below) was {np.round(self.max_score, 2)} - located in the {ns}{ew} quadrant, at {str_cand[0]}N, {str_cand[1]}E. Site choice explanation: {" ".join(candidate["notes"])}'
+                return {'topic': 'Mine Workings Suitability', 'explanation': explanation}
         # else:
         #     while self.max_score[1] > 0:
         #         for candidate in self.candidates:
@@ -232,13 +297,13 @@ class MineFeasibility:
         licenses_responsibility_map = read_and_convert_geojson_file('data/geojson/license-area-of-responsibility.geojson')
         licenses_responsibility_areas = find_and_sort_features(licenses_responsibility_map, self.buffered_gdf, self.point_gdf)
         output = self.process_licensed_areas(licenses, licenses_responsibility_areas)
-        output['explanation'] = 'The Coal Authority licenses the extraction of coal, including operations such as mining, exploration, and other coal-related activities. Licensed areas indicate that coal mining operations have been planned or undertaken since 1994 - however, there are plenty of coal workings existing that have remained unworked since 1994 and are thus recorded as having no license area - this, however, does not imply that a license is not required to operate. Statistics for your chosen area:\n' + "\n".join(output['explanation'])
+        output['explanation'] = 'The Coal Authority licenses the extraction of coal, including operations such as mining, exploration, and other coal-related activities. Licensed areas indicate that coal mining operations have been planned or undertaken since 1994 - however, there are plenty of coal workings existing that have remained unworked since 1994 and are thus recorded as having no license area - this, however, does not imply that a license is not required to operate. Statistics for your chosen area: ' + " ".join(output['explanation'])
         self.output.append(output)
 
     def process_licensed_areas(self, licenses, license_areas):
-        if len(licenses) == 0 or len(licenses) == 1 and licenses[0]['distance_m'] > self.buffer:
-            if len(license_areas) == 1 and license_areas[0]['distance_m'] > self.buffer:
-                return {'topic':"Licensed Areas", "explanation":"No areas within the search radius have been the subject of a license, granted or planned, since 1994."}
+        if len(licenses) == 0 or (len(licenses) == 1 and licenses.iloc[0]['distance_m'] > self.buffer):
+            if len(license_areas) == 1 and license_areas.iloc[0]['distance_m'] > self.buffer:
+                return {'topic':"Licensed Areas", "explanation":["No areas within the search radius have been the subject of a license, granted or planned, since 1994."]}
             elif len(license_areas) >= 1:
                 active_areas = [area for _, area in license_areas.iterrows() if area['l_status'] == 'Granted' and str(area['revoke_date']) == 'NaT']
 
@@ -247,10 +312,10 @@ class MineFeasibility:
                         area = active_areas[0]
                         return {
                             'topic': 'Licensed Areas',
-                            "explanation": (
+                            "explanation": ([
                                 f"The area around the selected coordinate is partially within the area of responsibility "
                                 f"from {area['l_name'].title()} – an {area['l_type'].lower()} working."
-                            )
+                            ])
                         }
                     else:
                         names = ", ".join(
@@ -259,14 +324,14 @@ class MineFeasibility:
                         )
                         return {
                             'topic': 'Licensed Areas',
-                            "explanation": (
+                            "explanation": ([
                                 f"The area around the selected coordinate overlaps with multiple active licensed areas: {names}."
-                            )
+                            ])
                         }
                 else:
                     return {
                         'topic': "Licensed Areas",
-                        "explanation": "No areas within the search radius are currently under license, but licenses have been issued for the area since 1994 (for more info visit https://datamine-cauk.hub.arcgis.com/)."
+                        "explanation": ["No areas within the search radius are currently under license, but licenses have been issued for the area since 1994 (for more info visit https://datamine-cauk.hub.arcgis.com/)."]
                     }
 
         else:
@@ -326,7 +391,8 @@ class MineFeasibility:
         self.get_nearby_workings()
         self.get_licensed_areas()
         self.identify_abandonment_plans()
+        print(self.output)
 
 if __name__ == "__main__":
-    ma = MineFeasibility([53.37, -1.46], 5000, 123455)
-    ma.get_nearby_workings()
+    ma = MineFeasibility([53.41, -2.15], 5000, 123455)
+    ma.run()

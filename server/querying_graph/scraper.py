@@ -39,24 +39,24 @@ class Scraper:
 
     def run_search(self) -> dict:
         # TODO brave api start
-        # response = requests.get(
-        #     "https://api.search.brave.com/res/v1/web/search",
-        #     headers={
-        #         "Accept": "application/json",
-        #         "Accept-Encoding": "gzip",
-        #         "x-subscription-token": self.search_api_key
-        #     },
-        #     params={
-        #         "q": self.query,
-        #         "count": 20,
-        #         "country": "GB"
-        #     },
-        # ).json()
+        response = requests.get(
+            "https://api.search.brave.com/res/v1/web/search",
+            headers={
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip",
+                "x-subscription-token": self.search_api_key
+            },
+            params={
+                "q": self.query,
+                "count": 20,
+                "country": "GB"
+            },
+        ).json()
         # TODO brave api end
 
         # TODO cached response
-        with open('outputs/ddgoutput.json', "w", encoding="utf-8") as f:
-            json.dump(response, f, indent=4, ensure_ascii=False)
+        # with open('outputs/ddgoutput.json', "w", encoding="utf-8") as f:
+        #     json.dump(response, f, indent=4, ensure_ascii=False)
         # TODO cached response end
 
         return response
@@ -167,9 +167,9 @@ class Scraper:
 
     def run(self):
         # TODO temp to bypass api
-        # search_results = self.run_search()
+        search_results = self.run_search()
         # TODO temp end
-        self.scrape_results()
+        self.scrape_results(search_results)
         self.download_and_parse_reports()
         self.finalise_documents()
         self.save_documents()
