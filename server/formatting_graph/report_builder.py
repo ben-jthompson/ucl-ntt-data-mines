@@ -16,11 +16,12 @@ from .formatter_components import front_cover, figure, report_section, table, bi
 
 
 class ReportBuilder:
-    def __init__(self, client_id: str, location: str, report_sections: List[Dict], bibliography: List[Dict]):
+    def __init__(self, client_id: str, location: str, data_report_sections: List[Dict], report_sections: List[Dict], bibliography: List[Dict]):
         self.date = dt.datetime.today()
         self.display_date = self.date.strftime("%d %B %Y")
         self.location = location
         self.client_id = client_id
+        self.data_content = data_report_sections
         self.content = report_sections
         self.bibliography = bibliography
         self.filename = self.format_filename()
@@ -50,6 +51,8 @@ class ReportBuilder:
         story.extend(front_cover(self.location))
 
         # === Report sections ===
+        for section in self.data_content:
+            story.extend(report_section(section, self.doc))
         for section in self.content:
             story.extend(report_section(section, self.doc))
         print("BIB: ", self.bibliography)

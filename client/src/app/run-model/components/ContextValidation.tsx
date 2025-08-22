@@ -60,14 +60,6 @@ export default function ContextValidation({
     source: string;
     description?: string;
   };
-  const [foundResources, setFoundResources] = useState<foundResource[]>([
-    {
-      file: "Abandoned Mines Dataset",
-      source:
-        "https://www.data.gov.uk/dataset/15777eb2-a97e-4dc8-b435-0e4292d6575c/abandoned-mines-catalogue",
-      description: "Description of plans for abandoned mines in the UK",
-    },
-  ]);
 
   const apiUrl = `https://nominatim.openstreetmap.org/reverse?lat=${coords[0]}&lon=${coords[1]}&format=json`;
   useEffect(() => {
@@ -169,50 +161,6 @@ export default function ContextValidation({
                           {file.tags?.length ? file.tags.join(", ") : "No tags"}
                         </Typography>
                       </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                ))}
-              </Box>
-            </Box>
-          )}
-          {/* Uploaded Files List */}
-          {foundResources && (
-            <Box mt={3}>
-              <Typography variant="subtitle1" gutterBottom>
-                Key Resources found
-              </Typography>
-              <Box
-                mt={3}
-                sx={{
-                  maxHeight: 200,
-                  overflowY: "auto",
-                  border: "1px solid #ccc",
-                  borderRadius: 2,
-                  p: 1,
-                }}
-              >
-                {foundResources.map((resource, ind) => (
-                  <Accordion key={resource.file}>
-                    <AccordionSummary
-                      expandIcon={<ArrowDropDownIcon />}
-                      aria-controls="panel1-content"
-                      id={resource.file}
-                    >
-                      <Typography component="span">{resource.file}</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Typography>
-                        {resource.description || "No description available."}
-                      </Typography>
-                      <Link
-                        href={resource.source}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        underline="hover"
-                        color="#00CEC8"
-                      >
-                        View Source
-                      </Link>
                     </AccordionDetails>
                   </Accordion>
                 ))}

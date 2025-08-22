@@ -4,6 +4,8 @@ import random
 import numpy as np
 import os
 import datetime as dt
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import contextily as ctx
 import datetime as dt
@@ -84,7 +86,7 @@ class MineFeasibility:
                 sds = ''
         self.derive_mine_working_ranks()
         now = str(dt.datetime.now())
-        image_dir = os.path.join(os.getcwd(), 'server/uploads', str(self.client_id))
+        image_dir = os.path.join(os.getcwd(), 'server/uploads', str(self.client_id), 'report')
         os.makedirs(image_dir, exist_ok=True)
         self.image_path = os.path.join(image_dir, file_format_string(f'mine_img{now}'))
         self.produce_mine_image()   
@@ -232,7 +234,7 @@ class MineFeasibility:
                 ns = 'north' if cand_coords[0] >= self.coords[0] else 'south'
                 str_cand = [str(coord) for coord in cand_coords]
                 explanation += f'The max suitability score across the sampled points (as seen on the figure below) was {np.round(self.max_score, 2)} - located in the {ns}{ew} quadrant, at {str_cand[0]}N, {str_cand[1]}E. Site choice explanation: {" ".join(candidate["notes"])}'
-                return {'topic': 'Mine Workings Suitability', 'explanation': explanation}
+                return {'topic': 'Mine Workings Suitability', 'explanation': explanation, 'fig': self.image_path}
         # else:
         #     while self.max_score[1] > 0:
         #         for candidate in self.candidates:
@@ -287,6 +289,7 @@ class MineFeasibility:
         ctx.add_basemap(ax, crs='EPSG:3857', source=ctx.providers.Esri.WorldStreetMap, alpha=0.75)
         # ax.set_axis_off()
         plt.tight_layout()
+        print("IMGPATH M: ", self.image_path)
         plt.savefig(self.image_path, dpi=300)
         plt.close(fig)
         return
@@ -391,7 +394,7 @@ class MineFeasibility:
         self.get_nearby_workings()
         self.get_licensed_areas()
         self.identify_abandonment_plans()
-        print(self.output)
+        return self.output
 
 if __name__ == "__main__":
     ma = MineFeasibility([53.41, -2.15], 5000, 123455)

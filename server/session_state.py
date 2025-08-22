@@ -12,7 +12,7 @@ class SessionState(TypedDict, total=False):
 
     # Spatial data phase
     region: Optional[Any]  
-    suitability: List[Any]
+    data_report_sections: List[Any]
 
     # Querying phase
     queries: List[Dict] 

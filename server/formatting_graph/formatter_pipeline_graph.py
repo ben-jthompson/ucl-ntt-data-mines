@@ -15,7 +15,7 @@ def text_compilation_node(state: SessionState) -> SessionState:
     Rewrites the 'explanation', 'risk', and 'suitability' fields in each report section
     using the provided llm.
     """
-    report_sections = state.get("report_sections", [])
+    report_sections = state.get("suitability", [])
     rewritten_sections = []
 
     for section in report_sections:
@@ -37,26 +37,30 @@ def text_compilation_node(state: SessionState) -> SessionState:
                 ]
 
                 new_text = llm.invoke(messages)
-                print(new_text)
+                print(messages)
+                print(new_text.context)
                 # TODO: test"
         #         rewritten_section[key] = new_text
 
         # rewritten_sections.append(rewritten_section)
 
     state["report_sections"] = rewritten_sections
+    state['current'] = 'pdf_creation'
     return state
 
 
 def pdf_creation_node(state: SessionState) -> SessionState:
-    report_builder = ReportBuilder(client_id=state['client_id'], location=state['location'], report_sections=state['report_sections'], bibliography=state['bibliography'])
+    report_builder = ReportBuilder(client_id=state['client_id'], location=state['location'], data_report_sections=state['data_report_sections'], report_sections=state['report_sections'], bibliography=state['bibliography'])
     report_builder.run()
     # TODO: get cursor to modify private vars eg. client id with an _
     metadata = report_builder.get_metadata()
+    print("METADATA:", metadata)
     state["metadata"]["file_name"] = metadata['file_name']
     state["metadata"]["display_name"] = f'{state["location"]} Report {metadata["display_date"]}'
     state["metadata"]["upload_date"] = metadata['date'].isoformat()
     state["metadata"]["description"] = f'Report for location: {state["location"]}'
     state["metadata"]["coords"] = state["coords"]
+    state['current'] = 'metadata'
     return state
 
 def metadata_making_node(state: SessionState) -> SessionState:

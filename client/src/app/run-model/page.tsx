@@ -117,7 +117,6 @@ export default function RunModel() {
           )
         );
       case 2:
-        setModelRunning(true);
         return coords ? (
           <ModelRunning
             location={location}

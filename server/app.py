@@ -89,6 +89,8 @@ def get_uploaded_files(client_id):
         if filename.endswith(".meta.json"):
             continue
         meta_path = os.path.join(upload_folder, f"{filename}.meta.json")
+        if not os.path.isfile(meta_path):
+            continue
         tag_list = None
         try:
             with open(meta_path, 'r', encoding='utf-8') as f:
@@ -197,8 +199,9 @@ def run_pipeline():
         'docs': [],
         'retriever': None,
         'response': '',
-        'suitability': [],
-        'report_sections': []
+        'data_report_sections': [],
+        'report_sections': [],
+        'bibliography':[]
         }
 
     def generate():       

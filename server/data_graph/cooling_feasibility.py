@@ -36,7 +36,7 @@ class CoolingFeasibility:
         #  : Rocks with essentially no groundwater
         
         aquifers = find_and_sort_features(aquifer_map, self.buffered_gdf, self.point_gdf)
-        return self.process_aquifer_result(aquifers[['distance_m', 'SUMMARY', 'CLASS', 'geometry']])
+        self.output = [self.process_aquifer_result(aquifers[['distance_m', 'SUMMARY', 'CLASS', 'geometry']])]
         
     # def process_aquifer_result(self, aquifers):
         # TODO: invoke llm for sample output, then use that for template response
@@ -107,7 +107,7 @@ class CoolingFeasibility:
     
     def add_supplementary_information(self):
         # TODO: link up
-        return """For a proposed groundwater-source, open-loop geothermal system (regardless of whether 
+        self.output.append({'topic': 'Geothermal Information', 'explanation': """For a proposed groundwater-source, open-loop geothermal system (regardless of whether 
 aquifer or mine water derived), the Environment Agency (EA) is the principal regulator for 
 England. They are responsible for managing abstraction and reinjection applications and 
 licences.  
@@ -118,11 +118,13 @@ At present, a number of consents, permits and licences will be required for a fu
 from the EA. These may include:  
 Groundwater Investigation Consent (WR32) 
 Abstraction licence  
-Reinjection/discharge permit (via an Environmental Permit)"""
+Reinjection/discharge permit (via an Environmental Permit)"""})
 
 
     def run(self):
-            pass
+        self.get_aquifer_status()
+        self.add_supplementary_information()
+        return self.output
 
 if __name__ == '__main__':
     cf = CoolingFeasibility([53.383331, -1.566667], 5000)

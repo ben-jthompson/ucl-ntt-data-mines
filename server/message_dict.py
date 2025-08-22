@@ -5,6 +5,8 @@ MESSAGE_DICT = {
     'cooling': ['Calculating cooling prospects...', 3],
     'environmental': ['Calculating environmental risk...', 4],
     'data_formatting': ['Formatting data report section...', 5],
-    'data_end': ['Searching web for information...', 6],
-    'local_authorities': ['D', 6]
+    'data_bibliography': ['Saving data sources...', 6],
+    'data_end': ['Searching web for information...', 7],
+    'pdf_creation': ['Creating your report...', 8],
+    'metadata': ['Zipping your files...', 9]
 }

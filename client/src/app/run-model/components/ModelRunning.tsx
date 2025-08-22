@@ -37,6 +37,7 @@ export default function ModelRunning({
   const [progressBar, setProgressBar] = useState(0);
 
   useEffect(() => {
+    onFinishedRunning(true);
     var encodedLocation = null;
     if (location) {
       encodedLocation = encodeURIComponent(location);

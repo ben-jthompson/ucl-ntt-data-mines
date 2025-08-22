@@ -55,7 +55,8 @@ class EnvironmentalFeasibility:
         if conjectures > 10:
             output['explanation'] += f"It is important to know that, of the {total_faults} disturbances, {conjectures}% are not verified - therefore, they will need to be properly georeferenced."
         print(output['explanation'])
-        self.render_disturbances_image(disturbance_candidates)
+        img_path = self.render_disturbances_image(disturbance_candidates)
+        output['fig'] = img_path
         return output
 
     def render_disturbances_image(self, disturbance_candidates):
@@ -119,12 +120,13 @@ class EnvironmentalFeasibility:
         ctx.add_basemap(ax, crs='EPSG:3857', source=ctx.providers.Esri.WorldStreetMap, alpha=0.75)
         plt.tight_layout()
         now = str(dt.datetime.now())
-        image_dir = os.path.join(os.getcwd(), 'server/uploads', str(self.client_id))
+        image_dir = os.path.join(os.getcwd(), 'server/uploads', str(self.client_id), 'report')
         os.makedirs(image_dir, exist_ok=True)
         image_path = os.path.join(image_dir, file_format_string(f'disturbance_img{now}'))
+        print("IMGPATH: ", image_path)
         plt.savefig(image_path, dpi=300)
         plt.close(fig)
-        return
+        return image_path
 
     def get_flood_risk(self):
         flood_risk_map = read_and_convert_geojson_file('data/geojson/Flood_Risk_Areas.json')
