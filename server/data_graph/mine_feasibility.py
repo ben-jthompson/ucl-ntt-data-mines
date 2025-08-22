@@ -265,7 +265,9 @@ class MineFeasibility:
             markersize=150,
             cmap="RdYlGn",
             legend=True,
-            legend_kwds={'label': "Suitability Score", 'shrink': 0.6}
+            legend_kwds={'label': "Suitability Score", 'shrink': 0.6},
+            edgecolor="black", 
+            linewidth=0.8 
         )
 
         xmin, xmax = ax.get_xlim()
@@ -288,8 +290,6 @@ class MineFeasibility:
         plt.savefig(self.image_path, dpi=300)
         plt.close(fig)
         return
-
-
     
     def get_licensed_areas(self):
         licenses_map = read_and_convert_geojson_file('data/geojson/license-areas.geojson')

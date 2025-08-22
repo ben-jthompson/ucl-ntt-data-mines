@@ -130,7 +130,10 @@ def sample_features(feature_gdf, buffer_gdf, spacing):
             geometry=point_gdf.buffer(float(50)),
             crs=point_gdf.crs
         )
-        features_under_point = find_and_sort_features(feature_gdf, buffered_point_gdf, point_gdf)[['type', 'depth', 'area', 'distance_m']]
+        try:
+            features_under_point = find_and_sort_features(feature_gdf, buffered_point_gdf, point_gdf)[['type', 'depth', 'area', 'distance_m']]
+        except KeyError:
+            features_under_point = find_and_sort_features(feature_gdf, buffered_point_gdf, point_gdf)
         if len(features_under_point)==1 and features_under_point.iloc[0]['distance_m'] > 50:
             features_under_point = features_under_point.iloc[1:]
         candidates.append({
