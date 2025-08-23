@@ -234,7 +234,7 @@ class MineFeasibility:
                 ns = 'north' if cand_coords[0] >= self.coords[0] else 'south'
                 str_cand = [str(coord) for coord in cand_coords]
                 explanation += f'The max suitability score across the sampled points (as seen on the figure below) was {np.round(self.max_score, 2)} - located in the {ns}{ew} quadrant, at {str_cand[0]}N, {str_cand[1]}E. Site choice explanation: {" ".join(candidate["notes"])}'
-                return {'topic': 'Mine Workings Suitability', 'explanation': explanation, 'fig': self.image_path}
+                return {'topic': 'Mine Workings Suitability', 'explanation': explanation, 'fig': [f"{self.image_path}.png", 'Mine Workings Suitability Map']}
         # else:
         #     while self.max_score[1] > 0:
         #         for candidate in self.candidates:

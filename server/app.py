@@ -201,7 +201,8 @@ def run_pipeline():
         'response': '',
         'data_report_sections': [],
         'report_sections': [],
-        'bibliography':[]
+        'bibliography':[],
+        'metadata': {}
         }
 
     def generate():       

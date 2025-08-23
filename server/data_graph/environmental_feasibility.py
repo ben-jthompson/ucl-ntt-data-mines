@@ -4,6 +4,8 @@ import datetime as dt
 import os
 from shapely.geometry import Point
 import contextily as ctx
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from pyproj import Transformer
 from .data_pipeline_funcs import find_and_sort_features, read_and_convert_geojson_file, sample_features
@@ -56,7 +58,7 @@ class EnvironmentalFeasibility:
             output['explanation'] += f"It is important to know that, of the {total_faults} disturbances, {conjectures}% are not verified - therefore, they will need to be properly georeferenced."
         print(output['explanation'])
         img_path = self.render_disturbances_image(disturbance_candidates)
-        output['fig'] = img_path
+        output['fig'] = [img_path, 'Geological Disturbances Risk Map']
         return output
 
     def render_disturbances_image(self, disturbance_candidates):

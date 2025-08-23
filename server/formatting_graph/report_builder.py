@@ -51,11 +51,18 @@ class ReportBuilder:
         story.extend(front_cover(self.location))
 
         # === Report sections ===
+        fig_count = 0
         for section in self.data_content:
-            story.extend(report_section(section, self.doc))
+            addition = report_section(section, self.doc)
+            if type(addition) == list:
+                story.extend(addition)
+            else:
+                story.append(addition)
+            if section.get('fig'):
+                fig_count += 1
+                story.append(figure(section['fig'][0], 320, 320, section['fig'][1], fig_count))
         for section in self.content:
             story.extend(report_section(section, self.doc))
-        print("BIB: ", self.bibliography)
         story.extend(bibliography(self.bibliography))
 
         return story

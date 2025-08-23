@@ -15,36 +15,28 @@ def text_compilation_node(state: SessionState) -> SessionState:
     Rewrites the 'explanation', 'risk', and 'suitability' fields in each report section
     using the provided llm.
     """
-    report_sections = state.get("suitability", [])
-    rewritten_sections = []
+    report_sections = state.get("data_report_sections", [])
+    # with open('rep_sec.txt', 'w') as f:
+    #     for sec in report_sections:
+    #         f.write(str(sec))
+    with open("repo_sec.json", "r", encoding="utf-8") as f:
+        report_sections = json.load(f)
+    
+    for idx, section in enumerate(report_sections):
+        explanation = section['explanation']
+        messages = [
+            SystemMessage(content="You are a professional technical report writer, writing a feasibility report on different aspects affecting suitability of data centre placement within coal mines."),
+            HumanMessage(
+                content=(
+                    "Rewrite the following text for clarity and conciseness, keeping the meaning exactly the same. Return only the rewritten text with no extra commentary:\n\n"
+                    f"{explanation}"
+                )
+            )
+        ]
 
-    for section in report_sections:
-        rewritten_section = section.copy()
-
-        for key in ["explanation", "risk", "suitability"]:
-            if key in section and section[key]:
-                original_text = section[key]
-
-                # Prepare LangChain messages
-                messages = [
-                    SystemMessage(content="You are a professional technical report writer, writing a feasibility report on different aspects affecting suitability of data centre placement within coal mines."),
-                    HumanMessage(
-                        content=(
-                            "Rewrite the following text for clarity and conciseness, keeping the meaning exactly the same. Return only the rewritten text with no extra commentary:\n\n"
-                            f"{original_text}"
-                        )
-                    )
-                ]
-
-                new_text = llm.invoke(messages)
-                print(messages)
-                print(new_text.context)
-                # TODO: test"
-        #         rewritten_section[key] = new_text
-
-        # rewritten_sections.append(rewritten_section)
-
-    state["report_sections"] = rewritten_sections
+        new_text = llm.invoke(messages)
+        section['explanation'] = new_text.content
+    state['data_report_sections'] = report_sections
     state['current'] = 'pdf_creation'
     return state
 

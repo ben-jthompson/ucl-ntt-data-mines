@@ -31,7 +31,10 @@ def report_section(section: Dict, doc) -> List:
     """Generate report section."""
     topic = Paragraph(f"<b>{section['topic']}</b>", styles["Heading2"])
     section_start, section_end = split_paragraph_into_lines(section["explanation"], styles['Normal'], doc)
-    return [KeepTogether([topic, Spacer(1, 12), Paragraph(section_start, styles['Normal'])]), Paragraph(section_end, styles['Normal']), Spacer(1, 24)]
+    if section['topic']=='Relevant Mine Abandonment Plans':
+        return KeepTogether([topic, Spacer(1, 12), Paragraph(section['explanation'], styles['Normal'])])
+    else:
+        return [KeepTogether([topic, Spacer(1, 12), Paragraph(section_start, styles['Normal'])]), Paragraph(section_end, styles['Normal']), Spacer(1, 24)]
 
 
 def table(data: List[List[str]], col_widths=None) -> Table:
@@ -52,9 +55,15 @@ def table(data: List[List[str]], col_widths=None) -> Table:
     return table
 
 
-def figure(image_path: str, width: int, height: int) -> Image:
+def figure(image_path: str, width: int, height: int, caption: str, fig_num: int) -> Image:
     """Insert image into report."""
-    return Image(image_path, width, height)
+    fig_caption = f"<b>Figure {fig_num}: {caption}</b>"
+    fig = Image(image_path, width, height)
+    
+    normal = styles["Normal"].clone('NormalCentered')
+    normal.alignment = TA_CENTER
+    caption_para = Paragraph(fig_caption, normal)
+    return KeepTogether([fig, Spacer(1, 6), caption_para])
 
 def bibliography(bibliography: List[Dict]):
     references = []
