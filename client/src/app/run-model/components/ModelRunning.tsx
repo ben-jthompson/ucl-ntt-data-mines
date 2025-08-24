@@ -34,7 +34,7 @@ export default function ModelRunning({
   buffer: number;
   onFinishedRunning: (running: boolean) => void;
 }) {
-  const [progressBar, setProgressBar] = useState(0);
+  const [progressBar, setProgressBar] = useState(0.1);
 
   useEffect(() => {
     onFinishedRunning(true);
@@ -63,19 +63,20 @@ export default function ModelRunning({
           console.log("[MESSAGE] " + JSON.stringify(message));
           if (message.type === "node_change") {
             status.innerText = message.node[0] + "\n";
-            setProgressBar(message.node[1] / 10);
+            setProgressBar(message.node[1] / 12);
             console.log(status.innerText);
+          }
+          if (message.type === "node_change" && message.done === 'true') {
+            console.log("Event source closed.");
+            eventSource.close();
+            onFinishedRunning(false);
           }
         } catch (err) {
           // console.warn("Non-JSON SSE:", event.data);
           console.log("diff output");
         }
 
-        if (event.data === "DONE") {
-          console.log("Event source closed.");
-          eventSource.close();
-          onFinishedRunning(false);
-        }
+        
       };
       eventSource.onerror = function (error) {
         console.error("EventSource failed:", error);

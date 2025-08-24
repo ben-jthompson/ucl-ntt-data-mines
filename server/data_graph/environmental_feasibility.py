@@ -58,7 +58,7 @@ class EnvironmentalFeasibility:
             output['explanation'] += f"It is important to know that, of the {total_faults} disturbances, {conjectures}% are not verified - therefore, they will need to be properly georeferenced."
         print(output['explanation'])
         img_path = self.render_disturbances_image(disturbance_candidates)
-        output['fig'] = [img_path, 'Geological Disturbances Risk Map']
+        output['fig'] = [f"{img_path}.png", 'Geological Disturbances Risk Map']
         return output
 
     def render_disturbances_image(self, disturbance_candidates):

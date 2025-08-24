@@ -27,20 +27,20 @@ export default function Output({
   coords: [number, number];
   radius: number;
 }) {
-  useEffect(() => {
-    // TODO: return zip file to user, with meta.json
-    const client = localStorage.getItem("clientId");
-    axios
-      .post(`http://localhost:8080/api/clients/${client}/files/zip`, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
-      .then((response) => {
-        console.log("Upload successful:", response.data);
-        // TODO add id assignment
-      });
-  });
+  // useEffect(() => {
+  //   // TODO: return zip file to user, with meta.json
+  //   const client = localStorage.getItem("clientId");
+  //   axios
+  //     .post(`http://localhost:8080/api/clients/${client}/files/zip`, {
+  //       headers: {
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //     })
+  //     .then((response) => {
+  //       console.log("Upload successful:", response.data);
+  //       // TODO add id assignment
+  //     });
+  // });
   return (
     coords && (
       <>

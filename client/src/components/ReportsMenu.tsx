@@ -25,10 +25,13 @@ export default function ReportsMenu({ reports, clientId }: ReportsMenuProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
-    <Box sx={{ p: 3, width: "100%", textAlign: "left" }}>
+    <Box sx={{ p: 3, width: "100%", textAlign: "left"}}>
       <Typography variant="h6" gutterBottom>
         My Reports
       </Typography>
+      <Box sx={{ p: 3, width: "100%", textAlign: "left", 
+      maxHeight: 400,
+      overflow: "auto" }}>
       <List>
         {[...reports]
           .sort(
@@ -84,6 +87,7 @@ export default function ReportsMenu({ reports, clientId }: ReportsMenuProps) {
           onDialogClosed={setDialogOpen}
         />
       )}
+      </Box>
     </Box>
   );
 }

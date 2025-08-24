@@ -122,10 +122,8 @@ def get_reports(client_id):
         return jsonify({"success":"no files to retrieve"}), 200
     
     report_metadatas = []
-    print(os.listdir(reports_folder))
     for filename in os.listdir(reports_folder):
         if filename.endswith('.meta.json'):
-            print(filename)
             filepath = os.path.join(reports_folder, filename)
             try:
                 with open(filepath, 'r', encoding='utf-8') as f:
@@ -207,41 +205,19 @@ def run_pipeline():
 
     def generate():       
         for event in session_graph.stream(session_state, stream_mode='updates'):
-            print("YIELD")
             node = list(event.keys())[0]
+            print('CURR_NODE:', node)
             current_node = event[node]['current']
             if current_node:
                 message_to_display = MESSAGE_DICT[current_node]
                 message = {
                     'type': 'node_change',
-                    'node': message_to_display
+                    'node': message_to_display,
+                    'done': 'false'
                 }
+                if current_node == 'done':
+                    message['done'] = 'true'
                 yield f"data: {json.dumps(message)}\n\n"
-
-           
-            # if node_name == "run_spatial_queries":
-            #     print("node_state['output']: ", node_state['output'])
-            #     yield f"data: {json.dumps(node_state)}\n\n"
-            # else:
-            #     yield f"data: {json.dumps({'node': node_name, 'state': node_state})}\n\n"
-
-        # yield f"data: Starting pipeline for query: {query}\n\n"
-        # time.sleep(2)
-        # yield "data: Scraping documents...\n\n"
-        # # pipeline.scrape()
-        # time.sleep(2)
-        # yield "data: Adding your documents...\n\n"
-        # # pipeline.add_context()
-        # time.sleep(2)
-        # yield "data: Embedding documents...\n\n"
-        # # pipeline.embed()
-        # time.sleep(2)
-        time.sleep(30)
-        # yield "data: Querying LLM...\n\n"
-        # result = query_pipeline.query_llm()
-        time.sleep(2)
-        # yield f"data: DONE: {result}\n\n"
-        yield "data: DONE\n\n"
 
     return Response(stream_with_context(generate()), content_type='text/event-stream')
 

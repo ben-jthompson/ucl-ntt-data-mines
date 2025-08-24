@@ -30,11 +30,7 @@ def front_cover(location: str) -> List:
 def report_section(section: Dict, doc) -> List:
     """Generate report section."""
     topic = Paragraph(f"<b>{section['topic']}</b>", styles["Heading2"])
-    section_start, section_end = split_paragraph_into_lines(section["explanation"], styles['Normal'], doc)
-    if section['topic']=='Relevant Mine Abandonment Plans':
-        return KeepTogether([topic, Spacer(1, 12), Paragraph(section['explanation'], styles['Normal'])])
-    else:
-        return [KeepTogether([topic, Spacer(1, 12), Paragraph(section_start, styles['Normal'])]), Paragraph(section_end, styles['Normal']), Spacer(1, 24)]
+    return [KeepTogether([topic, Spacer(1, 12), Paragraph(section['explanation'], styles['Normal'])]), Spacer(1, 24)]
 
 
 def table(data: List[List[str]], col_widths=None) -> Table:

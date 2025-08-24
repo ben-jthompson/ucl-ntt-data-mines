@@ -4,6 +4,8 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
 import json
 import os
+import zipfile
+import shutil
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -46,7 +48,6 @@ def pdf_creation_node(state: SessionState) -> SessionState:
     report_builder.run()
     # TODO: get cursor to modify private vars eg. client id with an _
     metadata = report_builder.get_metadata()
-    print("METADATA:", metadata)
     state["metadata"]["file_name"] = metadata['file_name']
     state["metadata"]["display_name"] = f'{state["location"]} Report {metadata["display_date"]}'
     state["metadata"]["upload_date"] = metadata['date'].isoformat()
@@ -61,6 +62,26 @@ def metadata_making_node(state: SessionState) -> SessionState:
     file_path = os.path.join(folder_path, f'{state["metadata"]["file_name"]}.meta.json')
     with open(file_path, "w") as f:
         json.dump(state["metadata"], f, indent=2)
+    state['current'] = 'zipper'
+    return state
+
+def zipper_node(state: SessionState) -> SessionState:
+    upload_folder = os.path.join("server/uploads", state['client_id'])
+    report_folder = os.path.join("server/reports", state['client_id'])
+    output_path = os.path.join("server/reports", state['client_id'], state['metadata']['file_name'], f"Downloads_{state['metadata']['file_name'][:-4]}")
+    report_output_path = os.path.join("server/reports", state['client_id'], state['metadata']['file_name'][:-4], f"Report_{state['metadata']['file_name'][:-4]}")
+    if os.path.exists(upload_folder) and os.listdir(upload_folder):
+        shutil.make_archive(output_path, "zip", upload_folder)
+        shutil.rmtree(upload_folder)
+
+    with zipfile.ZipFile(report_output_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for file in [state['metadata']['file_name'], f"{state['metadata']['file_name']}.meta.json"]:
+            abs_path = os.path.join(report_folder, file)
+            if os.path.exists(abs_path):
+                zipf.write(abs_path, report_output_path)
+
+    state['current'] = 'DONE'
+    return state
 
 if __name__ == '__main__':
     metadata = pdf_creation_node({
