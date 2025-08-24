@@ -3,6 +3,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib import colors
 from typing import List, Dict
+import os
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from .formatter_utils import split_paragraph_into_lines
@@ -53,8 +54,14 @@ def table(data: List[List[str]], col_widths=None) -> Table:
 
 def figure(image_path: str, width: int, height: int, caption: str, fig_num: int) -> Image:
     """Insert image into report."""
+    print("IMG:", image_path)
+    print(os.listdir(os.path.join('server/uploads', '2ff3ade2-9405-47ee-8014-804361215db2', 'report')))
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image not found: {image_path}")
+    fig = Image(image_path)
+    fig._restrictSize(width, height)
+
     fig_caption = f"<b>Figure {fig_num}: {caption}</b>"
-    fig = Image(image_path, width, height)
     
     normal = styles["Normal"].clone('NormalCentered')
     normal.alignment = TA_CENTER

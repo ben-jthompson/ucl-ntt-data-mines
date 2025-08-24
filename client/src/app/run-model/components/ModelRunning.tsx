@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import UploadWidget from "./UploadWidget";
 import dynamic from "next/dynamic";
 import { EventSource } from "eventsource";
+import { ReportFile } from "@/types/ReportFile";
 
 const ResultMap = dynamic(() => import("../../../components/ResultMap"), {
   ssr: false,
@@ -27,12 +28,14 @@ export default function ModelRunning({
   coords,
   buffer,
   onFinishedRunning,
+  onReportCompletion,
 }: {
   location: string | undefined;
   query: string;
   coords: [number, number];
   buffer: number;
   onFinishedRunning: (running: boolean) => void;
+  onReportCompletion: (report: ReportFile) => void;
 }) {
   const [progressBar, setProgressBar] = useState(0.1);
 
@@ -66,17 +69,25 @@ export default function ModelRunning({
             setProgressBar(message.node[1] / 12);
             console.log(status.innerText);
           }
-          if (message.type === "node_change" && message.done === 'true') {
+          if (message.type === "node_change" && message.done === "true") {
             console.log("Event source closed.");
+            const report = {
+              file_name: message.report.file_name,
+              display_name: message.report.display_name,
+              description: message.report.description,
+              id: message.report.id,
+              coords: message.report.coords,
+              upload_date: message.report.upload_date,
+            };
+            console.log("[REPORT]: ", report);
             eventSource.close();
             onFinishedRunning(false);
+            onReportCompletion(report);
           }
         } catch (err) {
           // console.warn("Non-JSON SSE:", event.data);
           console.log("diff output");
         }
-
-        
       };
       eventSource.onerror = function (error) {
         console.error("EventSource failed:", error);

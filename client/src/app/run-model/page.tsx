@@ -24,6 +24,7 @@ import ModelRunning from "./components/ModelRunning";
 import Output from "./components/Output";
 
 import { UploadedFile } from "@/types/UploadedFile";
+import { ReportFile } from "@/types/ReportFile";
 
 const ResultMap = dynamic(() => import("../../components/ResultMap"), {
   ssr: false,
@@ -45,6 +46,7 @@ export default function RunModel() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[] | null>(
     null
   );
+  const [result, setResult] = useState<ReportFile | null>(null);
   const [model, setModel] = useState<{}>({ place: "holder" });
 
   // state for model progress
@@ -124,6 +126,7 @@ export default function RunModel() {
             coords={coords}
             buffer={radius}
             onFinishedRunning={setModelRunning}
+            onReportCompletion={setResult}
           />
         ) : (
           <Container maxWidth="md" sx={{ py: 4 }}>
@@ -134,7 +137,16 @@ export default function RunModel() {
           </Container>
         );
       case 3:
-        return coords && <Output coords={coords} radius={radius} />;
+        return result ? (
+          <Output radius={radius} result={result} />
+        ) : (
+          <Container maxWidth="md" sx={{ py: 4 }}>
+            <CircularProgress />
+            <Typography variant="h6" sx={{ mt: 2 }}>
+              Something went wrong. Please reload the page and retry.
+            </Typography>
+          </Container>
+        );
       // default:
       //   return null;
     }

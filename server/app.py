@@ -137,6 +137,7 @@ def get_reports(client_id):
                     'id': metadata.get("id"),
                     'coords': metadata.get("coords"),
                     'upload_date': metadata.get("upload_date")})
+                    
     return jsonify({'success': True, 'files': report_metadatas}), 200
 
 @app.route("/api/reports/<client_id>/files/<file_name>", methods=["GET"])
@@ -148,6 +149,17 @@ def download_report(client_id, file_name):
     if not os.path.exists(report_path):
         abort(404, description="File not found")
     return send_file(report_path, as_attachment=True)
+
+@app.route("/api/reports/<client_id>/files/<file_name>/zip", methods=["GET"])
+def download_report_zip(client_id, file_name):
+    if not file_name or not client_id:
+        return jsonify({"error": "Missing filename or ID"}), 400
+
+    zip_path = os.path.join(os.getcwd(), 'server/reports', client_id, file_name[:-4], f'Downloads_{file_name[:-4]}.zip')
+    # print(report_path, "RPP")
+    if not os.path.exists(zip_path):
+        abort(404, description="File not found")
+    return send_file(zip_path, as_attachment=True, download_name=f"{file_name[:-4]}_accompanying.zip")
 
 @app.route("/api/clients/<client_id>/files/zip", methods=["POST"])
 def zip_uploaded_files(client_id):
@@ -208,6 +220,7 @@ def run_pipeline():
             node = list(event.keys())[0]
             print('CURR_NODE:', node)
             current_node = event[node]['current']
+            metadata = event[node]['metadata']
             if current_node:
                 message_to_display = MESSAGE_DICT[current_node]
                 message = {
@@ -217,6 +230,14 @@ def run_pipeline():
                 }
                 if current_node == 'done':
                     message['done'] = 'true'
+                    message['report'] = {
+                        'file_name': metadata['file_name'],
+                        'display_name': metadata['display_name'],
+                        'upload_date': metadata['upload_date'],
+                        'description': metadata['description'],
+                        'coords': metadata['coords'],
+                        'id': None
+                    }
                 yield f"data: {json.dumps(message)}\n\n"
 
     return Response(stream_with_context(generate()), content_type='text/event-stream')

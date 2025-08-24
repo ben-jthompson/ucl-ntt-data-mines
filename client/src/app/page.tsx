@@ -61,25 +61,14 @@ export default function Home() {
           </Button>
           <Button
             component={NextLink}
-            href="/map"
+            href="/how-it-works"
             variant="contained"
             color="primary"
             sx={{ minWidth: 120, fontWeight: "bold" }}
           >
-            Map
+            How it works
           </Button>
         </Box>
-
-        {/* "How it works" button */}
-        <Button
-          component={NextLink}
-          href="/how-it-works"
-          variant="outlined"
-          color="primary"
-          sx={{ mt: 5 }}
-        >
-          How it works
-        </Button>
       </Container>
     </Box>
   );

@@ -19,7 +19,6 @@ const Header = () => {
   const navLinks = [
     { href: "/run-model", label: "Run Model" },
     { href: "/reports", label: "Reports" },
-    { href: "/map", label: "Map" },
   ];
 
   useEffect(() => {

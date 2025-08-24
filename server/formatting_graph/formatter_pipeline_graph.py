@@ -18,11 +18,11 @@ def text_compilation_node(state: SessionState) -> SessionState:
     using the provided llm.
     """
     report_sections = state.get("data_report_sections", [])
-    # with open('rep_sec.txt', 'w') as f:
-    #     for sec in report_sections:
-    #         f.write(str(sec))
-    with open("repo_sec.json", "r", encoding="utf-8") as f:
-        report_sections = json.load(f)
+    with open('rep_sec.txt', 'w') as f:
+        for sec in report_sections:
+            f.write(str(sec))
+    # with open("repo_sec.json", "r", encoding="utf-8") as f:
+    #     report_sections = json.load(f)
     
     for idx, section in enumerate(report_sections):
         explanation = section['explanation']
@@ -68,9 +68,12 @@ def metadata_making_node(state: SessionState) -> SessionState:
 def zipper_node(state: SessionState) -> SessionState:
     upload_folder = os.path.join("server/uploads", state['client_id'])
     report_folder = os.path.join("server/reports", state['client_id'])
-    output_path = os.path.join("server/reports", state['client_id'], state['metadata']['file_name'], f"Downloads_{state['metadata']['file_name'][:-4]}")
-    report_output_path = os.path.join("server/reports", state['client_id'], state['metadata']['file_name'][:-4], f"Report_{state['metadata']['file_name'][:-4]}")
+    os.makedirs(os.path.join(os.getcwd(), "server/reports", state['client_id'], state['metadata']['file_name'][:-4]), exist_ok=True)
+    output_path = os.path.join(os.getcwd(), "server/reports", state['client_id'], state['metadata']['file_name'][:-4], f"Downloads_{state['metadata']['file_name'][:-4]}")
+    report_output_path = os.path.join(os.getcwd(),"server/reports", state['client_id'], state['metadata']['file_name'][:-4], f"Report_{state['metadata']['file_name'][:-4]}.zip")
+    
     if os.path.exists(upload_folder) and os.listdir(upload_folder):
+        print("UPLOAD FOLDER", upload_folder)
         shutil.make_archive(output_path, "zip", upload_folder)
         shutil.rmtree(upload_folder)
 
@@ -78,9 +81,9 @@ def zipper_node(state: SessionState) -> SessionState:
         for file in [state['metadata']['file_name'], f"{state['metadata']['file_name']}.meta.json"]:
             abs_path = os.path.join(report_folder, file)
             if os.path.exists(abs_path):
-                zipf.write(abs_path, report_output_path)
+                zipf.write(abs_path, file)
 
-    state['current'] = 'DONE'
+    state['current'] = 'done'
     return state
 
 if __name__ == '__main__':

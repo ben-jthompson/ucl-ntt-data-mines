@@ -41,7 +41,7 @@ class ReportBuilder:
     def format_filename(self) -> str:
         file_date = file_format_string(self.date)
         file_location = file_format_string(self.location)
-        return f"{file_location}-{file_date}-{self.client_id[:5]}.pdf"
+        return f"{file_location[:5]}-{file_date[-5:]}-{self.client_id[:5]}.pdf"
 
     def build_story(self) -> List:
         """Assemble the document content as a list of flowables."""

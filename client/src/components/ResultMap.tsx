@@ -33,13 +33,16 @@ function LocationMarker({
   setDialogOpen?: (open: boolean) => void;
 }) {
   const clientId = localStorage.getItem("clientId");
+  console.log("INFO", metadata, clientId, setDialogOpen, setViewerLink);
   return coords ? (
     <>
       <Marker position={coords}>
         {metadata && clientId && setDialogOpen && setViewerLink ? (
           <Popup>
-            {metadata.display_name}\n Uploaded on:{" "}
-            {formatDate(metadata.upload_date)}
+            <Typography variant="h6">{metadata.display_name}</Typography>
+            <Typography>
+              Uploaded on: {formatDate(metadata.upload_date)}
+            </Typography>
             <Button
               size="small"
               variant="outlined"
@@ -65,8 +68,6 @@ function LocationMarker({
           </Popup>
         ) : (
           <Popup>
-            {/* TODO: Add info for reports (eg. metadata && ()) */}
-            {/* TODO: Add download button, and download supplementary zip button */}
             lat: {Math.round(coords[0] * 10000) / 10000}; lng:{" "}
             {Math.round(coords[1] * 10000) / 10000}{" "}
           </Popup>
@@ -104,7 +105,6 @@ export default function ResultMap({
 
   const hasOneResult = reports ? reports.length === 1 : false;
   useEffect(() => {
-    // TODO: find way to zoom in
     if (result) {
       setCentre({ lat: result["coords"][0], lng: result["coords"][1] });
     } else if (hasOneResult && reports) {
@@ -149,7 +149,7 @@ export default function ResultMap({
         {centre && (
           <MapContainer
             center={centre}
-            zoom={6}
+            zoom={zoom}
             style={{ height: "100%", width: "100%" }}
           >
             <TileLayer
