@@ -12,7 +12,7 @@ load_dotenv()
 api_key = os.getenv('OPENAI_API_KEY')
 llm = ChatOpenAI(model="gpt-4o-mini", temperature = 0, api_key=api_key)
 
-def text_compilation_node(state: SessionState) -> SessionState:
+def data_rewriter_node(state: SessionState) -> SessionState:
     """
     Rewrites the 'explanation', 'risk', and 'suitability' fields in each report section
     using the provided llm.

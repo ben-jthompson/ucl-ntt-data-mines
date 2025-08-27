@@ -23,7 +23,7 @@ text_splitter = RecursiveCharacterTextSplitter(
 
 def make_chroma_db(documents: List[Document], query: str) -> VectorStoreRetriever:
     # create a store for the vectors
-    persist_dir = os.path.abspath('/server/graph/chroma_store') 
+    persist_dir = os.path.abspath('/server/querying_graph/chroma_store') 
     os.makedirs(persist_dir, exist_ok=True)
 
 
@@ -32,6 +32,7 @@ def make_chroma_db(documents: List[Document], query: str) -> VectorStoreRetrieve
                           embedding=embeddings,
                           collection_name=f'{query.lower().replace(" ", "-")}-suitability',
                           persist_directory=persist_dir)
+    # TODO: delete collections after use
     retriever = vectordb.as_retriever(
     search_type="similarity",
     search_kwargs={"k": 10} 

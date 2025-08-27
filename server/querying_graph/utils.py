@@ -48,7 +48,7 @@ def detect_file_type(url: str) -> str:
 
 
 
-def download_file(url: str, save_dir="server\downloads"):
+def download_file(url: str, client_id: str, save_dir="server\downloads"):
     headers = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -58,7 +58,7 @@ def download_file(url: str, save_dir="server\downloads"):
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.5"
 }
-    os.makedirs(save_dir, exist_ok=True)
+    os.makedirs(os.path.join(os.getcwd(), save_dir, client_id), exist_ok=True)
     filename = os.path.basename(url.split("?")[0])  
     filepath = os.path.join(save_dir, filename)
 

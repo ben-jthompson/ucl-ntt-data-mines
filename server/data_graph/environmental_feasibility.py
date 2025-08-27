@@ -23,7 +23,6 @@ class EnvironmentalFeasibility:
             crs=self.point_gdf.crs
         )
         
-    # TODO: get geological distrubances nearby - and see 'REPORTABLE' bool to check whether important for subsidence concerns
     def get_geological_disturbances(self):
         geological_disturbances_map = read_and_convert_geojson_file('data/geojson/geological-disturbances-27700.geojson')
         disturbances = find_and_sort_features(geological_disturbances_map, self.buffered_gdf, self.point_gdf)
@@ -136,8 +135,6 @@ class EnvironmentalFeasibility:
         return self.process_flood_risk_result(flood_risk[['distance_m', 'flood_source', 'geometry']])
 
     def process_flood_risk_result(self, flood_risk):
-        # TODO: invoke LLM to get flood history through 
-        # TODO: format as background data (LLM output), and quantitative result
         output = {'topic':'Flooding', 'risk': None, 'explanation': None}
         authority = {'Rivers and Sea': 'Environment Agency', 'Surface Water': 'Lead Local Flood Authorities'}
         nearest_flood_source = flood_risk['flood_source'].iloc[0]
@@ -166,7 +163,6 @@ class EnvironmentalFeasibility:
         self.output = []
         self.output.append(self.get_geological_disturbances())
         self.output.append(self.get_flood_risk())
-        print(self.output)
         return self.output
 
 

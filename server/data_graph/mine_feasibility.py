@@ -191,8 +191,8 @@ class MineFeasibility:
                 mine_water_calc = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=0)
                 
                 notes.append(f"Only one working found beneath this point, at {-(np.round(vals[0]))}m below ground level.")
-                workings*= 0.3
-            
+                workings=0
+            # TODO: CAP AT 0!
             return workings, notes
         self.max_score = 0 
         self.all_scores = []
@@ -246,6 +246,7 @@ class MineFeasibility:
         
         points = []
         scores = []
+        #TODO: FIX SCALE!
 
         for candidate in self.candidates:
             point = candidate["point"].geometry.iloc[0] 

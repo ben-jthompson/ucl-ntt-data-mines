@@ -15,7 +15,6 @@ class ContextAdder:
         uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir)]
         return uploaded_files
 
-    # TODO join up with UploadedDoc file type - props:
     def find_tagged_files(self, uploaded_docs):
         # check metadata for tags
         tagged_files = []
@@ -25,6 +24,7 @@ class ContextAdder:
                     metadata = json.load(f)
                     if self.tag in metadata.get('tags', []):
                         tagged_files.append(Document(page_content=metadata['description'], metadata={'url':path[:-10]}))
+                        # TODO: change to just one function for all files in the directory, else some will appear twice
                         self.bibliography.append({'file_name':metadata['file_name'], 'description':metadata['description'], 'tags':metadata['tags'], 'id':metadata['id'], 'user': True})
         for doc in tagged_files:
             self.handle_file_parsing(doc) 

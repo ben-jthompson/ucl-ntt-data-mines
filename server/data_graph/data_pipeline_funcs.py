@@ -8,7 +8,6 @@ def read_and_convert_geojson_file(file):
     return gpd.read_file(file).to_crs("EPSG:27700")
 
 def get_local_authority(coords, buffer):
-    # TODO feed in buffer
     point = Point(coords[1], coords[0])
     coords_point = GeoDataFrame(geometry=[point], crs='EPSG:4326').to_crs('EPSG:27700')
     coords_buffered = GeoDataFrame(

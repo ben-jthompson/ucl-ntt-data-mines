@@ -18,10 +18,11 @@ from server.querying_graph.utils import download_file, extract_from_source, docu
 from server.querying_graph.error_handler_class import ErrorHandler
 
 class Scraper:
-    def __init__(self, location: str, query: str):
+    def __init__(self, location: str, query: str, client_id: str):
         load_dotenv()
         self.location = location
         self.query = query
+        self.client_id = client_id
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.search_api_key = os.getenv("SEARCH_API_KEY")
         self.driver = self._setup_driver()
@@ -61,11 +62,8 @@ class Scraper:
 
         return response
 
-    def scrape_results(self, search_results=None):
+    def scrape_results(self, search_results):
         results = []
-        if not search_results:
-            with open('outputs/synthetic.json', 'r', encoding='utf-8') as file:
-                search_results = json.load(file)
 
         for result in search_results['results']:
             url = result.get('url')
@@ -95,6 +93,7 @@ class Scraper:
             try:
                 self.driver.get(url)
                 soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+                # TODO: move this outside of  for loop
                 soup_links = []
                 seen_links = set()
 
@@ -107,9 +106,10 @@ class Scraper:
                         continue
                     seen_links.add(redir_url)
                     soup_links.append(Document(page_content=a.get_text(strip=True), metadata={'redirect_url': redir_url, 'url': url, 'file_type': 'soup'}))
-
+                # TODO: move outisde of for loop to prevent duplicate information
                 if soup_links:
                     suitable_urls = url_suitability_scoring(soup_links, self.query)
+                    # TODO: scrape/download these
                     results.extend(suitable_urls)
 
             except Exception as e:
@@ -125,7 +125,7 @@ class Scraper:
             if file_type in self.unique or file_type in self.ms_unique:
                 try:
                     print(f"Downloading {url}")
-                    download_file(url)
+                    download_file(url, self.client_id)
                     extract_from_source(url, doc)
                 except Exception as e:
                     print(f"Failed to download/parse {url}: {e}")

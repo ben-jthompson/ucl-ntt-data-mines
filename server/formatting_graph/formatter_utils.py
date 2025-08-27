@@ -1,7 +1,6 @@
 
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from reportlab.platypus import Image, Paragraph
 
 WIDTH, HEIGHT = A4
 
@@ -18,21 +17,6 @@ def split_paragraph_into_lines(text: str, style, doc):
     title_text = paragraph[0] + "."
     later_text = ". ".join(paragraph[1:])
     return title_text, later_text
-
-def interactive_image(image_path: str, url: str, width: int, height: int, x: int, y: int) -> Image:
-    """
-    Create an image that can be clicked on.
-    """
-    img = Image(image_path, width, height)
-    img.hAlign = "LEFT"
-
-    # Attach the URL by monkey-patching (Platypus will respect _restrictSize + canvas callbacks).
-    def draw_with_link(self, canv: canvas.Canvas, x: float, y: float, _sW: float=0):
-        Image.drawOn(self, canv, x, y, _sW)
-        canv.linkURL(url, (x, y, x + width, y + height), relative=1)
-
-    img.drawOn = draw_with_link.__get__(img, Image)  # bind method
-    return img
 
 def render_interactive_image(canvas: canvas.Canvas, image: str, url: str, width: int, height: int, x: int, y: int):
     canvas.drawImage(image,
