@@ -4,6 +4,7 @@ from langchain.schema import Document
 from typing import List
 from dotenv import load_dotenv
 import os
+import re
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -42,7 +43,7 @@ def make_chroma_db(documents: List[Document], query: str) -> VectorStoreRetrieve
 def url_suitability_scoring(urls: List[Document], query: str) -> List[Document]:
     search_collection = Chroma(
         embedding_function=embeddings,
-        collection_name=f"{query.replace(' ', '-')}-Results".lower()
+        collection_name= re.sub(r"[ ,/]", "-", query).lower()
         )
     search_collection.add_documents(urls)
     retriever = search_collection.as_retriever(

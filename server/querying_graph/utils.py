@@ -60,7 +60,7 @@ def download_file(url: str, client_id: str, save_dir="server\downloads"):
 }
     os.makedirs(os.path.join(os.getcwd(), save_dir, client_id), exist_ok=True)
     filename = os.path.basename(url.split("?")[0])  
-    filepath = os.path.join(save_dir, filename)
+    filepath = os.path.join(save_dir, client_id, filename)
 
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
@@ -109,9 +109,7 @@ def get_ms_office_url(parsed: str) -> str:
     else:
         return None
 
-def extract_from_pdf(path: str, save_dir="server/downloads") -> str:
-    filename = os.path.basename(path.split("?")[0])  
-    filepath = os.path.join(save_dir, filename)
+def extract_from_pdf(filepath: str, save_dir="server/downloads") -> str:
     file = fitz.open(filepath)
     return "\n\n".join(page.get_text() for page in file)
 
@@ -164,7 +162,7 @@ def extract_from_shp(filepath: str) -> str:
     gdf = gpd.read_file(filepath)
     return gdf.to_string(index=False)
 
-def extract_from_source(filepath: str, doc: Document, save_dir='server/downloads') -> Document:
+def extract_from_source(filepath: str, doc: Document, client_id: str, save_dir='server/downloads') -> Document:
     parsing_method = {'.pdf': extract_from_pdf, 
                       '.docx': extract_from_docx,
                       '.doc': extract_from_doc,
@@ -177,9 +175,8 @@ def extract_from_source(filepath: str, doc: Document, save_dir='server/downloads
     # if document has been found during scraping:
     if save_dir == 'server/downloads':
         filename = os.path.basename(filepath.split("?")[0])  
-        filepath = os.path.join(save_dir, filename)
+        filepath = os.path.join(save_dir, client_id, filename)
     # else document has been uploaded by user, so filepath added in the arg is okay
-
     # iterate through keys to find appropriate extraction method
     for key, func in parsing_method.items():
         if filepath.endswith(key):

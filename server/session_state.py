@@ -1,9 +1,11 @@
 from typing import TypedDict, Dict, Optional, Tuple, List, Any
+from threading import Event
 
 class SessionState(TypedDict, total=False):
     # session level
     current: Optional[str]
     client_id: Optional[str]
+    stop_event: Optional[Event]
     location: Optional[str]
     coords: Optional[Tuple[float, float]]
     buffer: Optional[int]

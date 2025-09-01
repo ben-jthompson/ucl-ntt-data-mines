@@ -25,8 +25,9 @@ class ReportBuilder:
         self.content = report_sections
         self.bibliography = bibliography
         self.filename = self.format_filename()
-        self.folder = os.path.join("server/reports", self.client_id, self.filename)
-
+        while not os.path.exists(os.path.join("server/reports", self.client_id, self.filename[:-4])):
+            os.makedirs(os.path.join("server/reports", self.client_id, self.filename[:-4]), exist_ok=True)
+        self.folder = os.path.join("server/reports", self.client_id, self.filename[:-4], self.filename)
         self.styles = getSampleStyleSheet()
         self.doc = SimpleDocTemplate(
             self.folder,

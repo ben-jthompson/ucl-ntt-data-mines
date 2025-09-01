@@ -1,18 +1,19 @@
 from flask import Flask, request, jsonify, send_file, Response, stream_with_context, make_response, abort
 from flask_cors import CORS
 import os
-import time
+from threading import Event
 import json
 import shutil
 from flask_limiter import Limiter
-from server.utils import make_file_path, undo_file_path
+from server.utils import make_file_path, undo_file_path, delete_intermediates
 from server.session_graph import build_session_graph
-from server.message_dict import MESSAGE_DICT
+from server.info_dicts import MESSAGE_DICT, QUERY_DICT
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, methods=["GET", "POST", "DELETE", "OPTIONS", "PUT"])
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  
 limiter = Limiter(app)
+active_pipeline = {}
 
 @limiter.limit("10 per minute")
 @app.route("/api/clients/<client_id>/files", methods=["POST"])
@@ -23,7 +24,7 @@ def upload_file(client_id):
     file = request.files["file"]
     file_id = request.form.get('id')
     description = request.form.get('description') or None
-    tags = request.form.get('tags') or None
+    tags = request.form.get('tags') or []
 
     if not file or not file.filename:
         return jsonify({"error": "No selected file"}), 400
@@ -78,6 +79,41 @@ def delete_file(client_id, file_id):
 
     return jsonify({"success": True, "file_name": file_name, 'id': file_id}), 200
 
+@app.route("/api/clients/<client_id>/model", methods=["DELETE"])
+def clean_intermediate_files(client_id):
+    if request.method == "OPTIONS":
+        # Handle preflight request
+        response = make_response()
+        response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+        response.headers["Access-Control-Allow-Methods"] = "DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response, 200
+    
+     
+    # stop the pipeline
+    global active_pipeline
+    stop_event = active_pipeline.get(client_id)
+    if stop_event:
+        stop_event.set()
+    active_pipeline.pop(client_id, None)
+
+    delete_intermediates(client_id)
+
+    return jsonify({"success": True}), 200
+
+@app.route("/api/clients/<client_id>/model/start", methods=["DELETE"])
+def clean_files(client_id):
+    if request.method == "OPTIONS":
+        # Handle preflight request
+        response = make_response()
+        response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+        response.headers["Access-Control-Allow-Methods"] = "DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response, 200
+    
+    delete_intermediates(client_id)
+    return jsonify({"success": True}), 200
+
 @app.route("/api/clients/<client_id>/files", methods=["GET"])
 def get_uploaded_files(client_id):
     upload_folder = os.path.join("server/uploads", client_id)
@@ -117,27 +153,27 @@ def get_uploaded_files(client_id):
 @app.route("/api/reports/<client_id>", methods=["GET"])
 def get_reports(client_id):
     reports_folder = os.path.join(os.getcwd(), "server/reports", client_id)
-    
+    print(reports_folder, "REPORTS FOLDER")
     if not os.path.exists(reports_folder):
         return jsonify({"success":"no files to retrieve"}), 200
     
     report_metadatas = []
-    for filename in os.listdir(reports_folder):
-        if filename.endswith('.meta.json'):
-            filepath = os.path.join(reports_folder, filename)
-            try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    metadata = json.load(f)
-            except:
-                continue
-            report_metadatas.append({
-                    'file_name': metadata.get("file_name"),
-                    'display_name': metadata.get("display_name"),
-                    'description': metadata.get("description"),
-                    'id': metadata.get("id"),
-                    'coords': metadata.get("coords"),
-                    'upload_date': metadata.get("upload_date")})
-                    
+    for root, dirs, files in os.walk(reports_folder):
+        for f in files:
+            if f.endswith('.meta.json'):
+                try:
+                    with open(os.path.join(root, f), 'r', encoding='utf-8') as f:
+                        metadata = json.load(f)
+                except:
+                    continue
+                report_metadatas.append({
+                        'file_name': metadata.get("file_name"),
+                        'display_name': metadata.get("display_name"),
+                        'description': metadata.get("description"),
+                        'id': metadata.get("id"),
+                        'coords': metadata.get("coords"),
+                        'upload_date': metadata.get("upload_date")})
+    print(report_metadatas)
     return jsonify({'success': True, 'files': report_metadatas}), 200
 
 @app.route("/api/reports/<client_id>/files/<file_name>", methods=["GET"])
@@ -145,7 +181,7 @@ def download_report(client_id, file_name):
     if not file_name or not client_id:
         return jsonify({"error": "Missing filename or ID"}), 400
 
-    report_path = os.path.join(os.getcwd(), 'server/reports', client_id, file_name)
+    report_path = os.path.join(os.getcwd(), 'server/reports', client_id, file_name[:-4], file_name)
     if not os.path.exists(report_path):
         abort(404, description="File not found")
     return send_file(report_path, as_attachment=True)
@@ -187,38 +223,37 @@ def get_geojson(filename):
 @app.route("/api/pipeline", methods=["GET"])
 def run_pipeline():
     location = request.args.get("location")
-    query = request.args.get("query")
-    # TODO: change tag to be iterable for each query
-    tag = request.args.get("tag")
     client_id = request.args.get("client_id")
     buffer = int(request.args.get("buffer"))
     coords = request.args.get("coords")
     coords = [float(coord) for coord in coords.strip().split(" ")]
 
-    # query_pipeline = Pipeline(location, query, tag, client_id, coords)
+    stop_event = Event()
+    global active_pipeline
+    active_pipeline[client_id] = stop_event
+    
     session_graph = build_session_graph()
     session_state = {
         'current': 'region',
         'client_id': client_id,
+        'stop_event': stop_event,
         'location': location,
         'coords': coords,
         'buffer': buffer,
         'region': '',
-        'queries': [], 
-        'tags': [],
+        'queries': QUERY_DICT, 
         'docs': [],
         'retriever': None,
         'response': '',
         'data_report_sections': [],
         'report_sections': [],
-        'bibliography':[],
+        'bibliography': [],
         'metadata': {}
         }
 
     def generate():       
-        for event in session_graph.stream(session_state, stream_mode='updates'):
+        for event in session_graph.stream(session_state,  {"recursion_limit": 100}, stream_mode='updates'):
             node = list(event.keys())[0]
-            print('CURR_NODE:', node)
             current_node = event[node]['current']
             metadata = event[node]['metadata']
             if current_node:

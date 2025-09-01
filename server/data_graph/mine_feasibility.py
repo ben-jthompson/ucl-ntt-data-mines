@@ -81,9 +81,6 @@ class MineFeasibility:
                         self.candidates[idx]['features'] = remove_duplicate_features(self.candidates[idx]['features'])
                         # print("Added probable workings (+ ", len(filtered_probable_workings), ")")
                         # print("Probable working areas derived from knowledge of areas which were being mined before or around 1872. Data has been estimated from available mining records by qualified mining surveyors.")
-            else:
-                # print("enough confirmed workings")
-                sds = ''
         self.derive_mine_working_ranks()
         now = str(dt.datetime.now())
         image_dir = os.path.join(os.getcwd(), 'server/uploads', str(self.client_id), 'report')
@@ -143,11 +140,13 @@ class MineFeasibility:
                 mine_water_calc_non_prob = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(non_prob_min[1]-non_prob_min[0]))
                 if mine_water_calc_non_prob['feasible'] == False:
                     notes.append(mine_water_calc_non_prob['notes'])
-                    workings *= 0.1
+                    workings = 0
                 else: 
                     notes.append(f"For a 500kW data centre with 595kW of cooling demand, siting data centre at working at {abs(np.round(non_prob_min[0], 2))}m below ground level would require {np.round(mine_water_calc_non_prob['vol_flow_l_s'], 2)} litres per second to be pumped via a heat exchanger. Groundwater data is not available, but, assuming the confirmed nearest working at {abs(np.round(non_prob_min[1], 2))}m is flooded, the energy required to pump the water for heat exchange would be {np.round(mine_water_calc_non_prob['pump_power_kW'], 1)}kW.")
 
                     workings-=(mine_water_calc_non_prob['vol_flow_l_s']+mine_water_calc_non_prob['pump_power_kW'])
+                    if min(non_prob_min) > 100:
+                        workings-=abs(min(non_prob_min)/10)
             elif prob_min and len(prob_min)>1:
                 depth_str = int(np.round(prob_min[1] / 100.0) * 100)
                 depth_str = str(depth_str) if depth_str < -100 else "-100"
@@ -156,11 +155,13 @@ class MineFeasibility:
                 mine_water_calc_prob = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(prob_min[1]-prob_min[0]))
                 if mine_water_calc_prob['feasible'] == False:
                     notes.append(mine_water_calc_prob['notes'])
-                    workings *= 0.1
+                    workings *= 0
                 else:
                     notes.append(f"For a 500kW data centre with 595kW of cooling demand, siting data centre at working at {abs(np.round(prob_min[0], 2))}m below ground level would require {np.round(mine_water_calc_prob['vol_flow_l_s'], 2)} litres per second to be pumped via a heat exchanger. However, groundwater data is not available, meaning that knowing whether workings are flooded or not requires more data; also as the working is not explicitly georeferenced, the depth value is indicative - but mine water temperatures and energy calculations should be similar.")
                     workings-=(mine_water_calc_prob['vol_flow_l_s']+mine_water_calc_prob['pump_power_kW'])
                     workings*=0.9
+                    if min(prob_min) > 100:
+                        workings-=abs(min(prob_min)/10)
             elif len(prob_min) == 1 and len(non_prob_min) == 1:
                 vals = [prob_min[0], non_prob_min[0]]
                 depth_str = int(np.round(max(vals) / 100.0) * 100)
@@ -170,10 +171,12 @@ class MineFeasibility:
                 mine_water_calc = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(max(vals)-min(vals)))
                 if mine_water_calc['feasible'] == False:
                     notes.append(mine_water_calc['notes'])
-                    workings *= 0.1
+                    workings = 0
                 else:
                     notes.append(f"For a 500kW data centre with 595kW of cooling demand, siting data centre at working at {abs(np.round(max(vals), 2))}m below ground level would require {np.round(mine_water_calc['vol_flow_l_s'], 2)} litres per second to be pumped via a heat exchanger. However, groundwater data is not available, meaning that knowing whether workings are flooded or not requires more data; also as one of the workings is not explicitly georeferenced, the depth value may be indicative - but mine water temperatures and energy calculations should be similar.")
                     workings-=(mine_water_calc['vol_flow_l_s']+mine_water_calc['pump_power_kW'])
+                    if min(vals) > 100:
+                        workings-=abs(min(vals)/10)
                     workings*=0.95
             elif non_prob_min == None and prob_min == None:
                 notes.append("No mine features found under this specific point.")
@@ -193,6 +196,8 @@ class MineFeasibility:
                 notes.append(f"Only one working found beneath this point, at {-(np.round(vals[0]))}m below ground level.")
                 workings=0
             # TODO: CAP AT 0!
+            
+            workings = max(workings, 0)
             return workings, notes
         self.max_score = 0 
         self.all_scores = []

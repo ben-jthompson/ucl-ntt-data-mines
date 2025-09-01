@@ -6,12 +6,15 @@ from .environmental_feasibility import EnvironmentalFeasibility
 from .mine_feasibility import MineFeasibility
 from ..session_state import SessionState 
 import json   
+from ..utils import cancellable_node, should_cancel
 
+@cancellable_node
 def region_node(state: SessionState) -> SessionState:
     state['region'] = get_local_authority(state['coords'], state['buffer'])
     state['current'] = 'mining'
     return state
 
+@cancellable_node
 def mining_node(state: SessionState) -> SessionState:
     mining = MineFeasibility(state['coords'], state['buffer'], state['client_id'])
     mining_sections = mining.run()
@@ -19,6 +22,7 @@ def mining_node(state: SessionState) -> SessionState:
     state['current'] = 'cooling'
     return state
 
+@cancellable_node
 def cooling_node(state: SessionState) -> SessionState:
     cooler = CoolingFeasibility(state['coords'], state['buffer'])
     # TODO: get outputs
@@ -27,6 +31,7 @@ def cooling_node(state: SessionState) -> SessionState:
     state['current'] = 'environmental'
     return state
 
+@cancellable_node
 def environmental_node(state: SessionState) -> SessionState:
     environmental = EnvironmentalFeasibility(state['coords'], state['buffer'], state['client_id'])
     environmental_sections = environmental.run()
@@ -34,6 +39,7 @@ def environmental_node(state: SessionState) -> SessionState:
     state['current'] = 'data_bibliography'
     return state
 
+@cancellable_node
 def data_formatting_node(state: SessionState) -> SessionState:
     risk_dict = {
         'High': '#FF0000',
@@ -56,6 +62,7 @@ def data_formatting_node(state: SessionState) -> SessionState:
     state['current'] = 'data_end'
     return state
 
+@cancellable_node
 def data_bibliography(state: SessionState) -> SessionState:
     with open("data_references.json", "r") as f:
         metadata = json.load(f)

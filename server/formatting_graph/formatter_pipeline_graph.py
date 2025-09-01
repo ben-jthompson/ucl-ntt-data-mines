@@ -7,16 +7,18 @@ import os
 import zipfile
 import shutil
 from dotenv import load_dotenv
-
+from ..utils import cancellable_node, should_cancel
 load_dotenv()
 api_key = os.getenv('OPENAI_API_KEY')
 llm = ChatOpenAI(model="gpt-4o-mini", temperature = 0, api_key=api_key)
 
+@cancellable_node
 def data_rewriter_node(state: SessionState) -> SessionState:
     """
     Rewrites the 'explanation', 'risk', and 'suitability' fields in each report section
     using the provided llm.
     """
+    print("dwr node")
     report_sections = state.get("data_report_sections", [])
     with open('rep_sec.txt', 'w') as f:
         for sec in report_sections:
@@ -25,6 +27,7 @@ def data_rewriter_node(state: SessionState) -> SessionState:
     #     report_sections = json.load(f)
     
     for idx, section in enumerate(report_sections):
+        should_cancel(state)
         explanation = section['explanation']
         messages = [
             SystemMessage(content="You are a professional technical report writer, writing a feasibility report on different aspects affecting suitability of data centre placement within coal mines."),
@@ -42,11 +45,11 @@ def data_rewriter_node(state: SessionState) -> SessionState:
     state['current'] = 'pdf_creation'
     return state
 
-
+@cancellable_node
 def pdf_creation_node(state: SessionState) -> SessionState:
+    print("pdf")
     report_builder = ReportBuilder(client_id=state['client_id'], location=state['location'], data_report_sections=state['data_report_sections'], report_sections=state['report_sections'], bibliography=state['bibliography'])
     report_builder.run()
-    # TODO: get cursor to modify private vars eg. client id with an _
     metadata = report_builder.get_metadata()
     state["metadata"]["file_name"] = metadata['file_name']
     state["metadata"]["display_name"] = f'{state["location"]} Report {metadata["display_date"]}'
@@ -56,8 +59,9 @@ def pdf_creation_node(state: SessionState) -> SessionState:
     state['current'] = 'metadata'
     return state
 
+@cancellable_node
 def metadata_making_node(state: SessionState) -> SessionState:
-    folder_path = os.path.join(os.getcwd(), "server/reports", state["client_id"])
+    folder_path = os.path.join(os.getcwd(), "server/reports", state["client_id"], state['metadata']['file_name'][:-4])
     os.makedirs(folder_path, exist_ok=True)
     file_path = os.path.join(folder_path, f'{state["metadata"]["file_name"]}.meta.json')
     with open(file_path, "w") as f:
@@ -65,23 +69,23 @@ def metadata_making_node(state: SessionState) -> SessionState:
     state['current'] = 'zipper'
     return state
 
+@cancellable_node
 def zipper_node(state: SessionState) -> SessionState:
-    upload_folder = os.path.join("server/uploads", state['client_id'])
-    report_folder = os.path.join("server/reports", state['client_id'])
+    upload_folder = os.path.join(os.getcwd(), "server/uploads", state['client_id'])
+    report_folder = os.path.join(os.getcwd(), "server/reports", state['client_id'])
     os.makedirs(os.path.join(os.getcwd(), "server/reports", state['client_id'], state['metadata']['file_name'][:-4]), exist_ok=True)
     output_path = os.path.join(os.getcwd(), "server/reports", state['client_id'], state['metadata']['file_name'][:-4], f"Downloads_{state['metadata']['file_name'][:-4]}")
     report_output_path = os.path.join(os.getcwd(),"server/reports", state['client_id'], state['metadata']['file_name'][:-4], f"Report_{state['metadata']['file_name'][:-4]}.zip")
     
     if os.path.exists(upload_folder) and os.listdir(upload_folder):
-        print("UPLOAD FOLDER", upload_folder)
         shutil.make_archive(output_path, "zip", upload_folder)
         shutil.rmtree(upload_folder)
 
-    with zipfile.ZipFile(report_output_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for file in [state['metadata']['file_name'], f"{state['metadata']['file_name']}.meta.json"]:
-            abs_path = os.path.join(report_folder, file)
-            if os.path.exists(abs_path):
-                zipf.write(abs_path, file)
+    # with zipfile.ZipFile(report_output_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+    #     for file in [state['metadata']['file_name'], f"{state['metadata']['file_name']}.meta.json"]:
+    #         abs_path = os.path.join(report_folder, file)
+    #         if os.path.exists(abs_path):
+    #             zipf.write(abs_path, file)
 
     state['current'] = 'done'
     return state

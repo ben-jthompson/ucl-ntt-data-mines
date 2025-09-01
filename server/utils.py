@@ -1,5 +1,6 @@
 # utility functions (general)
 import os
+import shutil
 
 def make_file_path(file_name: str, id: str) -> str:
     """Make file path for user-uploaded file by concatenating original file name and id
@@ -17,3 +18,39 @@ def make_file_path(file_name: str, id: str) -> str:
 def undo_file_path(file_path:str) -> str:
     base, ext = os.path.splitext(file_path)
     return f'{base[:-11]}{ext}'
+
+def cancellable_node(fn):
+    # make pipeline cancellable
+    def wrapper(state, *args, **kwargs):
+        if state.get("stop_event") and state["stop_event"].is_set():
+            raise Exception("Pipeline cancelled")
+        return fn(state, *args, **kwargs)
+    return wrapper
+
+def should_cancel(state):
+    if state.get("stop_event") and state["stop_event"].is_set():
+        raise Exception("Pipeline cancelled")
+    else:
+        return
+
+def delete_intermediates(client_id):
+    scraping_folder = os.path.join(os.getcwd(), "server/downloads")
+    if os.path.exists(scraping_folder) and os.listdir(scraping_folder):
+        shutil.rmtree(scraping_folder)
+    folder_path = os.path.join("server/reports", client_id)
+    if os.path.exists(folder_path):
+        for root, dirs, files  in os.walk(folder_path):
+            for f in files:
+                if "Downloads_" in f:
+                    target_file = os.path.join(root, f)
+                    if os.path.exists(target_file):
+                        os.remove(target_file)
+                        print("DELETE: ", target_file)
+    return
+
+def format_docs(docs):
+    return "\n\n".join(
+        f"Content: {doc.page_content}\n"
+        f"Redirect URL: {doc.metadata.get('redirect_url')}"
+        for doc in docs
+    )

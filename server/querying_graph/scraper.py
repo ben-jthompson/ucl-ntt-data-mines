@@ -2,6 +2,7 @@ from typing import List
 import os
 import json
 import requests
+import datetime as dt
 from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -15,13 +16,13 @@ from urllib.parse import urljoin
 
 from server.querying_graph.chroma_funcs import url_suitability_scoring
 from server.querying_graph.utils import download_file, extract_from_source, document_to_dict, dict_to_document, detect_file_type, extract_ms_office_link
-from server.querying_graph.error_handler_class import ErrorHandler
 
 class Scraper:
-    def __init__(self, location: str, query: str, client_id: str):
+    def __init__(self, location: str, region: List[dict], query: str, client_id: str):
         load_dotenv()
         self.location = location
-        self.query = query
+        self.region = region[0]['name']
+        self.query = query['search_query'] + ' in ' + self.location + ', ' + self.region
         self.client_id = client_id
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.search_api_key = os.getenv("SEARCH_API_KEY")
@@ -39,33 +40,34 @@ class Scraper:
         return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     def run_search(self) -> dict:
-        # TODO brave api start
-        response = requests.get(
-            "https://api.search.brave.com/res/v1/web/search",
-            headers={
-                "Accept": "application/json",
-                "Accept-Encoding": "gzip",
-                "x-subscription-token": self.search_api_key
-            },
-            params={
-                "q": self.query,
-                "count": 20,
-                "country": "GB"
-            },
-        ).json()
-        # TODO brave api end
+        print(self.query, ':', dt.datetime.now())
+        if os.path.exists(f'output_{self.query[:3]}.json'):
+            with open(f'output_{self.query[:3]}.json', "r", encoding="utf-8") as f:
+                response = json.load(f)
+        else:
+            response = requests.get(
+                "https://api.search.brave.com/res/v1/web/search",
+                headers={
+                    "Accept": "application/json",
+                    "Accept-Encoding": "gzip",
+                    "x-subscription-token": self.search_api_key
+                },
+                params={
+                    "q": self.query,
+                    "count": 10,
+                    "country": "GB"
+                },
+            ).json()
 
-        # TODO cached response
-        # with open('outputs/ddgoutput.json', "w", encoding="utf-8") as f:
-        #     json.dump(response, f, indent=4, ensure_ascii=False)
-        # TODO cached response end
-
+            # TODO: cache responses
+            with open(f'output_{self.query[:3]}.json', "w", encoding="utf-8") as f:
+                json.dump(response, f, indent=4, ensure_ascii=False)
+            
         return response
 
     def scrape_results(self, search_results):
         results = []
-
-        for result in search_results['results']:
+        for result in search_results['web']['results']:
             url = result.get('url')
             if not url: 
                 continue
@@ -86,8 +88,13 @@ class Scraper:
                 article.parse()
                 results.append(Document(page_content=article.text, metadata={'url': url, 'redirect_url': url, 'file_type': 'web'}))
             except Exception as e:
-                error_handler = ErrorHandler(url=url, error=e)
-                error_handler.run()
+                try:
+                    self.driver.get(url)
+                    html = self.driver.page_source
+                    text = BeautifulSoup(html, 'html.parser').get_text(separator="\n", strip=True)
+                    results.append(Document(page_content=text, metadata={'url': url, 'redirect_url': url, 'file_type': 'web'}))
+                except Exception as j:
+                    print("Failed article and scrape on ", url)
 
             # use selenium to get links within webpage
             try:
@@ -124,9 +131,8 @@ class Scraper:
             # if the file is identified as non-conventional file type
             if file_type in self.unique or file_type in self.ms_unique:
                 try:
-                    print(f"Downloading {url}")
                     download_file(url, self.client_id)
-                    extract_from_source(url, doc)
+                    extract_from_source(url, doc, self.client_id)
                 except Exception as e:
                     print(f"Failed to download/parse {url}: {e}")
 
@@ -139,7 +145,7 @@ class Scraper:
             base_url = doc.metadata.get('url', '')
             file_type = doc.metadata.get('file_type', '')
 
-            if redir_url in link_set:
+            if redir_url in link_set or redir_url[:7] == ('mailto:'):
                 continue
             
             # if info has already been scraped, no need to rescrape
@@ -153,9 +159,14 @@ class Scraper:
                     doc.page_content = article.text
                     filtered_docs.append(doc)
                 except Exception as e:
-                    print(f"Failed to scrape {redir_url}: {e}")
-                    print('Document is ', doc)
-                    continue
+                    try:
+                        self.driver.get(redir_url)
+                        html = self.driver.page_source
+                        text = BeautifulSoup(html, 'html.parser').get_text(separator="\n", strip=True)
+                        doc.page_content = text
+                        filtered_docs.append(doc)
+                    except Exception as ex:
+                        continue
 
             link_set.add(redir_url)
 

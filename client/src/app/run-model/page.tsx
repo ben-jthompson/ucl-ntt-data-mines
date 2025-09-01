@@ -16,8 +16,8 @@ import {
 import dynamic from "next/dynamic";
 
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-
+import { useEffect } from "react";
+import axios from "axios";
 import Setup from "./components/Setup";
 import ContextValidation from "./components/ContextValidation";
 import ModelRunning from "./components/ModelRunning";
@@ -48,15 +48,38 @@ export default function RunModel() {
   );
   const [result, setResult] = useState<ReportFile | null>(null);
   const [model, setModel] = useState<{}>({ place: "holder" });
+  const [cleaning, setCleaning] = useState(false);
 
   // state for model progress
   const [status, setStatus] = useState(false);
 
   const router = useRouter();
 
-  {
-    /* logic to allow/disable progress */
-  }
+  useEffect(() => {
+    const clientId = localStorage.getItem("clientId");
+    const cleanup = () => {
+      setCleaning(true);
+      try {
+        axios.delete(`http://localhost:8080/api/clients/${clientId}/model`);
+      } catch (err) {
+        console.error("Cleanup failed", err);
+      } finally {
+        setCleaning(false);
+      }
+    };
+    // run on unmount to delete intermediate variables
+
+    window.addEventListener("beforeunload", cleanup);
+
+    return () => {
+      console.log("Unmounting...");
+      cleanup();
+      setActiveStep(0);
+      window.removeEventListener("beforeunload", cleanup);
+    };
+  }, []);
+
+  // logic to allow or disable progress
   const isStepValid = () => {
     switch (activeStep) {
       case 0:
@@ -84,8 +107,8 @@ export default function RunModel() {
   };
 
   const handleComplete = () => {
-    console.log(`Routing to home`);
-    router.push("/");
+    console.log("Routing to reports");
+    router.push("/reports");
   };
 
   const renderContent = (step: number) => {
@@ -122,7 +145,6 @@ export default function RunModel() {
         return coords ? (
           <ModelRunning
             location={location}
-            query={"Gravitational Energy"}
             coords={coords}
             buffer={radius}
             onFinishedRunning={setModelRunning}
@@ -162,37 +184,48 @@ export default function RunModel() {
             </Step>
           ))}
         </Stepper>
+        {cleaning ? (
+          <>
+            <Typography>Cleaning up data...</Typography>
+          </>
+        ) : (
+          <>
+            {renderContent(activeStep)}
 
-        {renderContent(activeStep)}
-
-        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-          <Button
-            disabled={activeStep === 0 || activeStep === 3}
-            onClick={handleBack}
-          >
-            Back
-          </Button>
-
-          <Box>
-            {activeStep === steps.length - 1 ? (
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}
+            >
               <Button
-                variant="contained"
-                onClick={handleComplete}
-                disabled={saving}
+                disabled={
+                  activeStep === 0 || activeStep === 2 || activeStep === 3
+                }
+                onClick={handleBack}
               >
-                {saving ? <CircularProgress size={24} /> : "Complete"}
+                Back
               </Button>
-            ) : (
-              <Button
-                variant="contained"
-                onClick={handleNext}
-                disabled={!isStepValid()}
-              >
-                Next
-              </Button>
-            )}
-          </Box>
-        </Box>
+
+              <Box>
+                {activeStep === steps.length - 1 ? (
+                  <Button
+                    variant="contained"
+                    onClick={handleComplete}
+                    disabled={saving}
+                  >
+                    {saving ? <CircularProgress size={24} /> : "Complete"}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    onClick={handleNext}
+                    disabled={!isStepValid()}
+                  >
+                    Next
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          </>
+        )}
       </Paper>
     </Box>
   );

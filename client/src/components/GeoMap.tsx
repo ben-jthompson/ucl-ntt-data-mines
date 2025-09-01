@@ -90,20 +90,27 @@ function LocationMarker({
   onSelect,
   radius,
   bound,
+  UK,
 }: {
   coords: [number, number] | null;
   onSelect: (coords: [number, number]) => void;
   radius: number;
   bound: FeatureCollection | null;
+  UK: FeatureCollection | null;
 }) {
   useMapEvents({
     click(e: any) {
       if (!bound) return;
       const pt: [number, number] = [e.latlng.lat, e.latlng.lng];
-      if (isInsideBound({ coords: pt, bound })) {
+      if (
+        isInsideBound({ coords: pt, bound }) &&
+        isInsideBound({ coords: pt, bound: UK })
+      ) {
         onSelect(pt);
       } else {
-        alert("Please select a location within mine extent.");
+        alert(
+          "Please select a location within mine extent, and within the bounds of UK land."
+        );
       }
     },
   });
@@ -259,6 +266,7 @@ export default function GeoMap({
               onSelect={onLocationSelected}
               radius={radius}
               bound={mineExtent}
+              UK={UKBound}
             />
 
             <LegendControl layers={layerVisibility} layerLegend={layerLegend} />
@@ -274,7 +282,7 @@ export default function GeoMap({
                 })}
               />
             )}
-            {/* layer showing mine extent */}
+            {/* layer showing aquifers */}
             {layerVisibility.aquifers && aquifers && (
               <GeoJSON
                 data={aquifers}

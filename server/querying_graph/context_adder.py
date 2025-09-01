@@ -12,8 +12,11 @@ class ContextAdder:
     # find the documents uploaded by the user which are relevant
     def get_uploaded_files(self):
         upload_dir = os.path.join(os.getcwd(), 'server/uploads', self.client_id)
-        uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir)]
-        return uploaded_files
+        if os.path.exists(upload_dir):
+            uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir)]
+            return uploaded_files
+        else:
+            return []
 
     def find_tagged_files(self, uploaded_docs):
         # check metadata for tags
@@ -23,7 +26,7 @@ class ContextAdder:
                 with open(path, 'r', encoding='utf-8') as f:
                     metadata = json.load(f)
                     if self.tag in metadata.get('tags', []):
-                        tagged_files.append(Document(page_content=metadata['description'], metadata={'url':path[:-10]}))
+                        tagged_files.append(Document(page_content=metadata['description'], metadata={'url':path[:-10], 'user': True}))
                         # TODO: change to just one function for all files in the directory, else some will appear twice
                         self.bibliography.append({'file_name':metadata['file_name'], 'description':metadata['description'], 'tags':metadata['tags'], 'id':metadata['id'], 'user': True})
         for doc in tagged_files:

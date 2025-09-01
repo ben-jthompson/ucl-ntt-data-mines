@@ -74,6 +74,8 @@ def bibliography(bibliography: List[Dict]):
     for reference in bibliography:
         if reference.get('user'):
             para = Paragraph(f"<b>{reference['file_name']}</b> (uploaded by user)", styles["Normal"])
+        elif reference.get('llm'):
+            para = Paragraph(f"<b>{reference['file_name']}</b> (accessed by LLM, sourced from  <a href='{reference['link']}'>{reference['link']}</a>))", styles["Normal"])
         else:
             para = Paragraph(f'<b>{reference["file_name"]}</b> (sourced from  <a href="{reference["link"]}">{reference["link"]}</a>)', styles["Normal"])
         references.append(para)

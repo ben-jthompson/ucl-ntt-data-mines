@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-
+import axios from "axios";
 import { useState, useEffect } from "react";
 import UploadWidget from "./UploadWidget";
 import dynamic from "next/dynamic";
@@ -24,14 +24,12 @@ const ResultMap = dynamic(() => import("../../../components/ResultMap"), {
 
 export default function ModelRunning({
   location,
-  query = "Gravitational Energy",
   coords,
   buffer,
   onFinishedRunning,
   onReportCompletion,
 }: {
   location: string | undefined;
-  query: string;
   coords: [number, number];
   buffer: number;
   onFinishedRunning: (running: boolean) => void;
@@ -45,17 +43,21 @@ export default function ModelRunning({
     if (location) {
       encodedLocation = encodeURIComponent(location);
     }
-    const encodedQuery = encodeURIComponent(query.trim());
-    // TODO: change - not needed
-    const encodedTag = encodeURIComponent("Area Demographics");
     const client = localStorage.getItem("clientId");
     const encodedClientId = encodeURIComponent(client || "");
     const encodedCoords = encodeURIComponent(coords.join(" "));
     const encodedBuffer = encodeURIComponent(buffer);
+    try {
+      axios.delete(`http://localhost:8080/api/clients/${client}/model/start`);
+    } catch (err) {
+      console.error("Cleanup failed", err);
+    }
 
-    if (encodedLocation && encodedQuery) {
+    // run on unmount to delete intermediate variables
+
+    if (encodedLocation) {
       const eventSource = new EventSource(
-        `http://localhost:8080/api/pipeline?location=${encodedLocation}&query=${encodedQuery}&tag=${encodedTag}&client_id=${encodedClientId}&coords=${encodedCoords}&buffer=${encodedBuffer}`
+        `http://localhost:8080/api/pipeline?location=${encodedLocation}&client_id=${encodedClientId}&coords=${encodedCoords}&buffer=${encodedBuffer}`
       );
       eventSource.onmessage = function (event) {
         // add response to ui
@@ -66,7 +68,7 @@ export default function ModelRunning({
           console.log("[MESSAGE] " + JSON.stringify(message));
           if (message.type === "node_change") {
             status.innerText = message.node[0] + "\n";
-            setProgressBar(message.node[1] / 12);
+            setProgressBar(message.node[1] / 16);
             console.log(status.innerText);
           }
           if (message.type === "node_change" && message.done === "true") {
@@ -105,6 +107,10 @@ export default function ModelRunning({
     >
       <progress value={progressBar} />
       <Typography id="status">Model running...</Typography>
+      <Typography>
+        Note: Reloading or navigating from the page may result in a wait for
+        data in newly loaded pages, while the model workflow is terminated.
+      </Typography>
     </Grid>
   );
 }
