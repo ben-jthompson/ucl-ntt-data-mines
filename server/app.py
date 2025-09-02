@@ -186,6 +186,18 @@ def download_report(client_id, file_name):
         abort(404, description="File not found")
     return send_file(report_path, as_attachment=True)
 
+@app.route("/api/reports/<client_id>/files/<file_name>", methods=["DELETE"])
+def delete_report(client_id, file_name):
+    if not file_name or not client_id:
+        return jsonify({"error": "Missing filename or ID"}), 400
+
+    report_path = os.path.join(os.getcwd(), 'server/reports', client_id, file_name[:-4])
+    if not os.path.exists(report_path):
+        abort(404, description="File not found")
+    else:
+        shutil.rmtree(report_path)
+    return jsonify({"success": True}), 200
+
 @app.route("/api/reports/<client_id>/files/<file_name>/zip", methods=["GET"])
 def download_report_zip(client_id, file_name):
     if not file_name or not client_id:
@@ -214,7 +226,9 @@ def zip_uploaded_files(client_id):
   
 @app.route("/api/geojson/<filename>", methods=["GET"])
 def get_geojson(filename):
-    filepath = os.path.join(os.getcwd(), "data/geojson", filename)
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
+
+    filepath = os.path.join(BASE_DIR, "data/geojson", filename)
     try:
         return send_file(filepath, mimetype='application/json')
     except FileNotFoundError:

@@ -40,29 +40,6 @@ def environmental_node(state: SessionState) -> SessionState:
     return state
 
 @cancellable_node
-def data_formatting_node(state: SessionState) -> SessionState:
-    risk_dict = {
-        'High': '#FF0000',
-        'Moderate': '#FFA500',
-        'Low': '#008000'
-    }
-    suitability_dict = {
-        'High': '#008000',
-        'Medium': '#FFA500',
-        'Low': '#FF0000'
-    }
-    for dictionary in state['report_sections']:
-        entry = [f"<b>{dictionary['topic']}</b>: {dictionary['explanation']}"]       
-        if 'risk' in dictionary.keys():
-            entry.append(risk_dict[dictionary['risk']])
-        else:
-            entry.append(suitability_dict[dictionary['suitability']])
-    
-    state['report_sections'].append({'Data Queries': entry})
-    state['current'] = 'data_end'
-    return state
-
-@cancellable_node
 def data_bibliography(state: SessionState) -> SessionState:
     with open("data_references.json", "r") as f:
         metadata = json.load(f)

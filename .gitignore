@@ -25,7 +25,13 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
+server/tests
+server/run_api_tests.py 
+server/run_tests.py
+server/test_requirements.txt 
+server/API_TEST_SEPARATION.md 
+server/pytest.ini 
+server/server
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.

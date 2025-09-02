@@ -52,3 +52,14 @@ export const viewReport = async (
     console.error("Failed to view report", error);
   }
 };
+
+export const deleteReport = async (clientId: string, fileName: string) => {
+  try {
+    const response = await axios.delete(
+      `http://localhost:8080/api/reports/${clientId}/files/${fileName}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Failed to delete report", error);
+  }
+};

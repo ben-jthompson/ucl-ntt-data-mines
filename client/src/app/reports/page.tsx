@@ -65,7 +65,13 @@ export default function Reports() {
             </Box>
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            {client && <ReportsMenu reports={reports} clientId={client} />}
+            {client && (
+              <ReportsMenu
+                reports={reports}
+                clientId={client}
+                setReports={setReports}
+              />
+            )}
           </Grid>
         </>
       ) : (

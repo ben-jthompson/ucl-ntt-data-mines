@@ -1,11 +1,15 @@
 import geopandas as gpd
+import os
 import numpy as np
 from shapely.geometry import Point
 from shapely import force_2d
 from geopandas import GeoDataFrame
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) )
+
 def read_and_convert_geojson_file(file):
-    return gpd.read_file(file).to_crs("EPSG:27700")
+    geojson_path = os.path.join(BASE_DIR, file)
+    return gpd.read_file(geojson_path).to_crs("EPSG:27700")
 
 def get_local_authority(coords, buffer):
     point = Point(coords[1], coords[0])
@@ -13,9 +17,9 @@ def get_local_authority(coords, buffer):
     coords_buffered = GeoDataFrame(
     geometry=coords_point.buffer(float(buffer)),
     crs=coords_point.crs
-)
-    # TODO serve data from github
-    local_authority_map = gpd.read_file('data/geojson/uk-local-authorities.geojson')
+) 
+    geojson_path = os.path.join(BASE_DIR, 'data', 'geojson', 'uk-local-authorities.geojson')
+    local_authority_map = gpd.read_file(geojson_path)
     local_authority_map = local_authority_map.drop_duplicates(subset=['name'])
     authority = find_features(local_authority_map, coords_buffered)
     if len(authority) > 1:
@@ -171,18 +175,19 @@ def remove_duplicate_features(df):
     ) 
     
 if __name__ == '__main__':
-    # case 1: result in one local authority
-    result = get_local_authority([50.144072, -5.384586], 5000)
-    print('Result 1: ', result)
-    # case 2: result nearest to a duplicated local authority
-    result = get_local_authority([55.656203, -1.013223], 5000)
-    print('Result 2: ', result)
-    # case 3: result not in a local authority
-    result = get_local_authority([54.572678, -3.998464], 5000)
-    print('Result 3: ', result)
-    # case 4: overlapping authorities
-    result = get_local_authority([51.476670, -0.184388], 5000)
-    print('Result 4: ', result)
+    print(BASE_DIR)
+    # # case 1: result in one local authority
+    # result = get_local_authority([50.144072, -5.384586], 5000)
+    # print('Result 1: ', result)
+    # # case 2: result nearest to a duplicated local authority
+    # result = get_local_authority([55.656203, -1.013223], 5000)
+    # print('Result 2: ', result)
+    # # case 3: result not in a local authority
+    # result = get_local_authority([54.572678, -3.998464], 5000)
+    # print('Result 3: ', result)
+    # # case 4: overlapping authorities
+    # result = get_local_authority([51.476670, -0.184388], 5000)
+    # print('Result 4: ', result)
 
 def convert_point_to_coords(point: GeoDataFrame):
     point_coords = point.to_crs(epsg=4326)
