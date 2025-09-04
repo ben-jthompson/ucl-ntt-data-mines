@@ -28,21 +28,21 @@ export default function HowItWorks() {
           <ListItem>
             <ListItemText
               primary="1. Configure Settings"
-              secondary="Choose your preferred coordinates and radius values."
+              secondary="Choose your preferred coordinates and radius values. You can click on the map to select a location, or input an address."
             />
           </ListItem>
 
           <ListItem>
             <ListItemText
               primary="2. Upload Your Data"
-              secondary="Upload relevant files into to tailor the analysis to your goals."
+              secondary="Upload relevant files into to tailor the analysis to your goals. Make sure to tag your documents with the relevant topic."
             />
           </ListItem>
 
           <ListItem>
             <ListItemText
               primary="3. Run the Analysis"
-              secondary="The application will process your data and display results on the interactive map."
+              secondary="The application will process your data and display your results on the interactive map."
             />
           </ListItem>
 

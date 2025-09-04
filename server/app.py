@@ -153,7 +153,6 @@ def get_uploaded_files(client_id):
 @app.route("/api/reports/<client_id>", methods=["GET"])
 def get_reports(client_id):
     reports_folder = os.path.join(os.getcwd(), "server/reports", client_id)
-    print(reports_folder, "REPORTS FOLDER")
     if not os.path.exists(reports_folder):
         return jsonify({"success":"no files to retrieve"}), 200
     
@@ -173,7 +172,6 @@ def get_reports(client_id):
                         'id': metadata.get("id"),
                         'coords': metadata.get("coords"),
                         'upload_date': metadata.get("upload_date")})
-    print(report_metadatas)
     return jsonify({'success': True, 'files': report_metadatas}), 200
 
 @app.route("/api/reports/<client_id>/files/<file_name>", methods=["GET"])
@@ -248,7 +246,7 @@ def run_pipeline():
     
     session_graph = build_session_graph()
     session_state = {
-        'current': 'region',
+        'current': 'start',
         'client_id': client_id,
         'stop_event': stop_event,
         'location': location,

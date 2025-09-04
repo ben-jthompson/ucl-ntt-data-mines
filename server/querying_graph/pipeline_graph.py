@@ -7,11 +7,15 @@ import os
 from langchain.tools import Tool
 from langchain.agents import initialize_agent
 from ..session_state import SessionState
+from langchain_community.tools.tavily_search import TavilySearchResults
 from ..utils import cancellable_node, format_docs
+from dotenv import load_dotenv
+
+load_dotenv()
+TAVILY_API_KEY = os.getenv('TAVILY_API_KEY')
 
 @cancellable_node
 def scrape_node(state: SessionState) -> SessionState:
-    print("scraper")
     state["query"] = state["queries"][0]
     state['current'] = state['query']['topic']
     scraper = Scraper(state["location"], state['region'], state["query"], state["client_id"])
@@ -47,6 +51,13 @@ def query_llm_node(state: SessionState) -> SessionState:
         ", the latter of which can be cited or added to the bibliography."
     )
 
+    web_search_tool = Tool(
+    name="web_search",
+    func=TavilySearchResults(max_results=5),
+    description="Search the web using Tavily. Use this when information is not found in the vector database."
+)
+
+
     def add_to_bibliography(url: str):
         entry = {
             'file_name': state['query']['topic'],
@@ -69,7 +80,7 @@ def query_llm_node(state: SessionState) -> SessionState:
     )
 
     agent = initialize_agent(
-        tools=[retriever_tool, bibliography_tool],
+        tools=[retriever_tool, web_search_tool, bibliography_tool],
         llm=querier.llm,
         agent='zero-shot-react-description',
         max_iterations=50,
@@ -78,7 +89,7 @@ def query_llm_node(state: SessionState) -> SessionState:
         handle_parsing_errors=True
     )
     response = agent.invoke({'input': current_q})
-    print("RESPONSE:", response['output'])
+    
     state["report_sections"].append({'topic':state["query"]["topic"], 'explanation':response['output']})
     doc_folder = os.path.join(os.getcwd(), 'server/downloads', state['client_id'])
     if os.path.exists(doc_folder) and os.listdir(doc_folder):
@@ -88,7 +99,7 @@ def query_llm_node(state: SessionState) -> SessionState:
 
 @cancellable_node
 def reset_state_node(state: SessionState) -> SessionState:
-    print('rst!')
+    
     state["queries"] = state["queries"][1:]
     state['response'] = ''
     state['docs'] = []
@@ -96,11 +107,7 @@ def reset_state_node(state: SessionState) -> SessionState:
     return state
 
 def queries_left(state: SessionState) -> str:
-    print("Checking queries...", state["queries"])
-    print("Bibliography: ", state['bibliography'])
     if len(state["queries"]) <= 1:
-        print("dwr")
         return 'true'
     else:
-        print("rst")
         return 'false'

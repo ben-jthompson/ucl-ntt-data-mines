@@ -94,7 +94,7 @@ export default function ContextValidation({
       setLoading(false);
     });
   }, []);
-
+  console.log(uploadedFiles, "up");
   return (
     <Grid container spacing={6}>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -113,7 +113,7 @@ export default function ContextValidation({
           </Typography>
 
           {/* Uploaded Files List */}
-          {uploadedFiles && (
+          {uploadedFiles && uploadedFiles.length ? (
             <Box mt={3}>
               <Typography variant="subtitle1" gutterBottom>
                 Uploaded Files
@@ -166,6 +166,8 @@ export default function ContextValidation({
                 ))}
               </Box>
             </Box>
+          ) : (
+            <Typography>No files uploaded.</Typography>
           )}
         </Box>
       </Grid>

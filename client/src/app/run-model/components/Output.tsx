@@ -63,7 +63,7 @@ export default function Output({
 }) {
   const clientId = localStorage.getItem("clientId");
   return (
-    <Grid container sx={{ height: "100vh" }}>
+    <Grid container sx={{ minHeight: "50vh" }}>
       <Grid size={{ xs: 12, md: 6 }}>
         <Box sx={{ width: "100%", height: "100%" }}>
           <ResultMap coords={null} radius={radius} result={result} />
@@ -104,6 +104,9 @@ export default function Output({
           </Box>
         </Box>
       </Grid>
+      <Typography variant="body1" color="text.secondary" gutterBottom>
+        Click on the marker to view the report.
+      </Typography>
     </Grid>
   );
 }

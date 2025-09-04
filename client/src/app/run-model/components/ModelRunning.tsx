@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Grid,
-  Box,
-  Typography,
-  Link,
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-} from "@mui/material";
+import { Box, Typography, LinearProgress, Grid, Card } from "@mui/material";
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import axios from "axios";
@@ -35,7 +27,7 @@ export default function ModelRunning({
   onFinishedRunning: (running: boolean) => void;
   onReportCompletion: (report: ReportFile) => void;
 }) {
-  const [progressBar, setProgressBar] = useState(0.1);
+  const [progressBar, setProgressBar] = useState(0);
 
   useEffect(() => {
     onFinishedRunning(true);
@@ -68,8 +60,8 @@ export default function ModelRunning({
           console.log("[MESSAGE] " + JSON.stringify(message));
           if (message.type === "node_change") {
             status.innerText = message.node[0] + "\n";
-            setProgressBar(message.node[1] / 16);
-            console.log(status.innerText);
+            setProgressBar((message.node[1] * 100) / 16);
+            console.log(message.node[1]);
           }
           if (message.type === "node_change" && message.done === "true") {
             console.log("Event source closed.");
@@ -99,18 +91,35 @@ export default function ModelRunning({
     }
   }, []);
   return (
-    <Grid
-      container
-      justifyContent="center"
-      alignItems="center"
-      style={{ minHeight: "100vh" }}
-    >
-      <progress value={progressBar} />
-      <Typography id="status">Model running...</Typography>
-      <Typography>
-        Note: Reloading or navigating from the page may result in a wait for
-        data in newly loaded pages, while the model workflow is terminated.
-      </Typography>
-    </Grid>
+    <>
+      {/* <Grid
+        container
+        justifyContent="center"
+        alignItems="center"
+        style={{ minHeight: "80vh" }}
+      > */}
+      <Card
+        sx={{
+          p: 4,
+          maxWidth: 1200,
+          textAlign: "center",
+          minHeight: "60vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between", // distributes items vertically
+        }}
+      >
+        <Typography id="status" variant="h6">
+          Model running...
+        </Typography>
+
+        <LinearProgress variant="determinate" value={progressBar} />
+        <Typography> Progress: {Math.round(progressBar)}%</Typography>
+        <Typography>
+          Note: Reloading or navigating from the page may result in a wait for
+          data in newly loaded pages, while the model workflow is terminated.
+        </Typography>
+      </Card>
+    </>
   );
 }

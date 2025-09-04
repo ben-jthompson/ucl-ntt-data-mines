@@ -46,15 +46,12 @@ export default function UploadWidget({
   const [tags, setTags] = useState<string[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const availableTags = [
-    "Area Demographics",
-    "Hazard Risk",
-    "Socioeconomic Statistics",
-    "Local Authority Activity",
-    "Local Sentiment",
-    "Mine Conditions",
-    "Mine Data",
-    "Groundwater Data",
-    "Budget and Timeline Plans",
+    "Mine History",
+    "Labour Availability",
+    "Energy Availability",
+    "Local Authorities",
+    "Existing Mine Regeneration Projects",
+    "Transport Availability",
   ];
   const ITEM_HEIGHT = 48;
   const ITEM_PADDING_TOP = 8;
@@ -139,6 +136,10 @@ export default function UploadWidget({
           } else if (error.response.status === 409) {
             alert(
               "File under the same name has already been uploaded. Please rename or select another file."
+            );
+          } else if (error.response.status === 413) {
+            alert(
+              "File must not be more than 10MB. Please select another file."
             );
           }
         } else {

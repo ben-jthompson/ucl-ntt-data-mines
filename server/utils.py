@@ -45,7 +45,6 @@ def delete_intermediates(client_id):
                     target_file = os.path.join(root, f)
                     if os.path.exists(target_file):
                         os.remove(target_file)
-                        print("DELETE: ", target_file)
     return
 
 def format_docs(docs):

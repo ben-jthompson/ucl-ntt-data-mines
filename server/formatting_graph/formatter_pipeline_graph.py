@@ -15,8 +15,7 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature = 0, api_key=api_key)
 @cancellable_node
 def data_rewriter_node(state: SessionState) -> SessionState:
     """
-    Rewrites the 'explanation', 'risk', and 'suitability' fields in each report section
-    using the provided llm.
+    Rewrites the  data sections using llm.
     """
     print("dwr node")
     report_sections = state.get("data_report_sections", [])
@@ -30,7 +29,22 @@ def data_rewriter_node(state: SessionState) -> SessionState:
         should_cancel(state)
         explanation = section['explanation']
         messages = [
-            SystemMessage(content="You are a professional technical report writer, writing a feasibility report on different aspects affecting suitability of data centre placement within coal mines."),
+            SystemMessage(content="""You are a professional technical report writer, writing a feasibility report on different aspects affecting suitability of data centre placement within coal mines. 
+                          Ensure the text is rewritten into clean, well-structured paragraphs. Use double newlines (`\n\n`) to declare a new paragraph, or a single newline (`\n`) to move to the next line, where appropriate.
+                        Preserve the meaning and readability of the content, but make it look like a polished feasibility report section.  
+                        Preformated Example:  The Coal Authority licenses coal extraction activities, including mining and exploration. Licensed areas indicate
+                        planned or undertaken coal mining operations since 1994. However, many coal workings have remained
+                        unworked since then and are recorded as unlicensed, which does not mean a license is unnecessary for
+                        operation. Statistics for the selected area include: - A license was applied for at Woolley Colliery Site (HJB), but
+                        the application was later cancelled. - A previous license at Woolley Colliery Site (Med) was revoked on 22 March
+                        2016. - An application for Bloomhouse Lane Phase II was granted but has since been withdrawn. \n\n
+                          Formatted Example:  The Coal Authority licenses coal extraction activities, including mining and exploration. Licensed areas indicate
+                        planned or undertaken coal mining operations since 1994. However, many coal workings have remained
+                        unworked since then and are recorded as unlicensed, which does not mean a license is unnecessary for
+                        operation. \n\n Statistics for the selected area include: \n- A license was applied for at Woolley Colliery Site (HJB), but
+                        the application was later cancelled. \n- A previous license at Woolley Colliery Site (Med) was revoked on 22 March
+                        2016. \n- An application for Bloomhouse Lane Phase II was granted but has since been withdrawn. 
+            """),
             HumanMessage(
                 content=(
                     "Rewrite the following text for clarity and conciseness, keeping the meaning exactly the same. Return only the rewritten text with no extra commentary:\n\n"
@@ -42,6 +56,74 @@ def data_rewriter_node(state: SessionState) -> SessionState:
         new_text = llm.invoke(messages)
         section['explanation'] = new_text.content
     state['data_report_sections'] = report_sections
+    state['current'] = 'rag_rewriter'
+    return state
+
+@cancellable_node
+def rag_rewriter_node(state: SessionState) -> SessionState:
+    """
+    Rewrites the RAG sections using the provided llm.
+    """
+    report_sections = state.get("report_sections", [])
+    # with open('rep_sec.txt', 'w') as f:
+    #     for sec in report_sections:
+    #         f.write(str(sec))
+    # with open("repo_sec.json", "r", encoding="utf-8") as f:
+    #     report_sections = json.load(f)
+    
+    for idx, section in enumerate(report_sections):
+        should_cancel(state)
+        explanation = section['explanation']
+        messages = [
+            SystemMessage(content="""You are a text-cleaning and formatting assistant.  
+            You will be given draft report sections that may contain formatting artifacts such as bold text (**like this**), 
+            bibliography lists at the end, inline source references in square brackets [like this], or emojis.  
+
+            Your task is to:
+            1. Replace all bold formatting with <b> HTML tags (e.g. **University of Huddersfield** → <b>University of Huddersfield</b>).  
+            2. Remove the bibliography sections entirely.  
+            3. Remove inline source references and URLs in square brackets.  
+            4. Remove any emojis if present.  
+            5. Ensure the text is rewritten into clean, well-structured paragraphs. Use double newlines (`\n\n`) to declare a new paragraph.
+            6. Preserve the meaning and readability of the content, but make it look like a polished feasibility report section.  
+
+            Return only the cleaned, rewritten text.
+                          
+            Preformatted Example:  In Upper Heaton, Kirklees, UK, there are several renewable energy projects and power plants, including: 1.
+                1. **District Heating Networks**: The Leeds
+                City Region, which includes Kirklees, has several urban settlements with the potential to support district heating
+                networks. Towns like Huddersfield and Halifax, which are near Upper Heaton, are particularly well-suited for such
+                initiatives. 2. **Biomass Energy Initiatives**: There are existing and proposed biomass energy schemes in the
+                region, including efforts to connect buildings to biomass heating systems. Notably, the Drax and Eggborough
+                power stations in Selby are involved in biomass co-firing. 3. **Wind Power Potential**: The region has
+                opportunities for wind power generation, especially in areas with lower landscape sensitivity. 4. **Energy
+                Recovery Facilities**: There are proposals for energy recovery facilities that could process significant amounts of
+                waste, contributing to renewable energy generation. These initiatives highlight the potential for sustainable energy
+                development in Upper Heaton and the surrounding areas. The cited source provides detailed insights into the
+                renewable energy landscape in the region. Source: [Kirklees Council - Low Carbon and Renewable Energy
+                Capacity in Yorkshire and Humber](https://www.kirklees.gov.uk/beta/planning-policy/pdf/supportingDocuments/cli
+                mateChange/Low-Carbon-Renewable-Energy-Capacity-Yorkshire-Humber.pdf)
+            Formatted Example: In Upper Heaton, Kirklees, UK, there are several renewable energy projects and power plants, including: \n\n<b>District Heating </b>: 
+                The Leeds City Region, which includes Kirklees, has several settlements with the potential to support district heating
+                networks. Towns like Huddersfield and Halifax, which are near Upper Heaton, are particularly well-suited for such
+                initiatives. \n <b>Biomass Energy Initiatives</b> There are existing and proposed biomass energy schemes in the
+                region, including efforts to connect buildings to biomass heating systems. Notably, the Drax and Eggborough
+                power stations in Selby are involved in biomass co-firing.\n <b>Wind Power Potential</b>: The region has
+                opportunities for wind power generation, especially in areas with lower landscape sensitivity. \n <b>Energy
+                Recovery Facilities</b> There are proposals for energy recovery facilities that could process significant amounts of
+                waste, contributing to renewable energy generation. These initiatives highlight the potential for sustainable energy
+                development in Upper Heaton and the surrounding areas."""),
+            HumanMessage(
+                content=(
+                    "Format the following text: \n\n"
+                    f"{explanation}"
+                )
+            )
+        ]
+
+        new_text = llm.invoke(messages)
+        section['explanation'] = new_text.content
+    state['report_sections'] = report_sections
     state['current'] = 'pdf_creation'
     return state
 

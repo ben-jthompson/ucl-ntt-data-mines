@@ -55,7 +55,7 @@ class EnvironmentalFeasibility:
         output['explanation'] += f"In the feature map below, red implies many disturbances (over five) within a 50m radius from the point, with the closest disturbance less than 25m from the centre. Yellow implies over five disturbances, but all over 25m away - or, fewer disturbances, but closer than 25m. Green indicates less than five disturbances, all further than 25m." 
         if conjectures > 10:
             output['explanation'] += f"It is important to know that, of the {total_faults} disturbances, {conjectures}% are not verified - therefore, they will need to be properly georeferenced."
-        print(output['explanation'])
+        
         img_path = self.render_disturbances_image(disturbance_candidates)
         output['fig'] = [f"{img_path}.png", 'Geological Disturbances Risk Map']
         return output
@@ -124,7 +124,7 @@ class EnvironmentalFeasibility:
         image_dir = os.path.join(os.getcwd(), 'server/uploads', str(self.client_id), 'report')
         os.makedirs(image_dir, exist_ok=True)
         image_path = os.path.join(image_dir, file_format_string(f'disturbance_img{now}'))
-        print("IMGPATH: ", image_path)
+      
         plt.savefig(image_path, dpi=300)
         plt.close(fig)
         return image_path

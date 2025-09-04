@@ -31,7 +31,12 @@ def front_cover(location: str) -> List:
 def report_section(section: Dict, doc) -> List:
     """Generate report section."""
     topic = Paragraph(f"<b>{section['topic']}</b>", styles["Heading2"])
-    return [KeepTogether([topic, Spacer(1, 12), Paragraph(section['explanation'], styles['Normal'])]), Spacer(1, 24)]
+    explanation_split = section['explanation'].split('\n')
+    keep_together = [topic, Spacer(1, 12)]
+    for part in explanation_split:
+        keep_together.extend([Paragraph(part, styles['Normal']), Spacer(1, 3)])
+
+    return [KeepTogether(keep_together), Spacer(1, 24)]
 
 
 def table(data: List[List[str]], col_widths=None) -> Table:
@@ -54,8 +59,6 @@ def table(data: List[List[str]], col_widths=None) -> Table:
 
 def figure(image_path: str, width: int, height: int, caption: str, fig_num: int) -> Image:
     """Insert image into report."""
-    print("IMG:", image_path)
-    print(os.listdir(os.path.join('server/uploads', '2ff3ade2-9405-47ee-8014-804361215db2', 'report')))
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image not found: {image_path}")
     fig = Image(image_path)

@@ -20,6 +20,7 @@
     "@types/geojson": "^7946.0.16",
     "axios": "^1.10.0",
     "eventsource": "^4.0.0",
+    "framer-motion": "^12.23.12",
     "leaflet": "^1.9.4",
     "mapbox-gl": "^3.13.0",
     "nanoid": "^5.1.5",

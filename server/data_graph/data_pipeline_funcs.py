@@ -174,8 +174,7 @@ def remove_duplicate_features(df):
         columns=['area_rounded', 'depth_rounded', 'dist_rounded']
     ) 
     
-if __name__ == '__main__':
-    print(BASE_DIR)
+# if __name__ == '__main__':
     # # case 1: result in one local authority
     # result = get_local_authority([50.144072, -5.384586], 5000)
     # print('Result 1: ', result)

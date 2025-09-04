@@ -218,17 +218,6 @@ export default function GeoMap({
 
   useEffect(() => {
     addLayer({
-      layerPath: "mine-test.geojson",
-      layerName: "UK Mine Entries",
-      layerDescription:
-        "Shows the location of mine entries (shafts, adits) in the UK.",
-      setLayers: setLayers,
-      setLayer: setMineEntries,
-    });
-  }, []);
-
-  useEffect(() => {
-    addLayer({
       layerPath: "aquifers-cropped-4326.geojson",
       layerName: "Aquifers under Mines",
       layerDescription:

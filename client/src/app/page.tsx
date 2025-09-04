@@ -66,7 +66,7 @@ export default function Home() {
             color="primary"
             sx={{ minWidth: 120, fontWeight: "bold" }}
           >
-            How it works
+            How It Works
           </Button>
         </Box>
       </Container>

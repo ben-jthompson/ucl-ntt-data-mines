@@ -102,11 +102,9 @@ class CoolingFeasibility:
         return output
 
     def calculate_aquifer_suitability(self, productivity, flow_mecha, distance):
-        # TODO: make figure of aquifer suitability?
         return (productivity + flow_mecha - distance/20000 ) / 2
     
     def add_supplementary_information(self):
-        # TODO: link up
         self.output.append({'topic': 'Geothermal Information', 'explanation': """For a proposed groundwater-source, open-loop geothermal system (regardless of whether 
 aquifer or mine water derived), the Environment Agency (EA) is the principal regulator for 
 England. They are responsible for managing abstraction and reinjection applications and 

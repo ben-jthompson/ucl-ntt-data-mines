@@ -1,12 +1,16 @@
-from typing import TypedDict, Dict
-from langgraph.graph import StateGraph
+import os
 from .data_pipeline_funcs import get_local_authority
 from .cooling_feasibility import CoolingFeasibility
 from .environmental_feasibility import EnvironmentalFeasibility
 from .mine_feasibility import MineFeasibility
 from ..session_state import SessionState 
 import json   
-from ..utils import cancellable_node, should_cancel
+from ..utils import cancellable_node
+
+@cancellable_node
+def start_node(state: SessionState) -> SessionState:
+    state['current'] = 'region'
+    return state
 
 @cancellable_node
 def region_node(state: SessionState) -> SessionState:
@@ -41,7 +45,9 @@ def environmental_node(state: SessionState) -> SessionState:
 
 @cancellable_node
 def data_bibliography(state: SessionState) -> SessionState:
-    with open("data_references.json", "r") as f:
+    base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    references = os.path.join(base_path, 'data/geojson', 'data_references.json')
+    with open(references, "r") as f:
         metadata = json.load(f)
         for entry in metadata:
             state['bibliography'].append({'file_name': entry['file'], 'link': entry['link']})

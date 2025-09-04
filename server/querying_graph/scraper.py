@@ -40,29 +40,29 @@ class Scraper:
         return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     def run_search(self) -> dict:
-        print(self.query, ':', dt.datetime.now())
-        if os.path.exists(f'output_{self.query[:3]}.json'):
-            with open(f'output_{self.query[:3]}.json', "r", encoding="utf-8") as f:
-                response = json.load(f)
-        else:
-            response = requests.get(
-                "https://api.search.brave.com/res/v1/web/search",
-                headers={
-                    "Accept": "application/json",
-                    "Accept-Encoding": "gzip",
-                    "x-subscription-token": self.search_api_key
-                },
-                params={
-                    "q": self.query,
-                    "count": 10,
-                    "country": "GB"
-                },
-            ).json()
+        # print(self.query, ':', dt.datetime.now())
+        # if os.path.exists(f'output_{self.query[:3]}.json'):
+        #     with open(f'output_{self.query[:3]}.json', "r", encoding="utf-8") as f:
+        #         response = json.load(f)
+        # else:
+        response = requests.get(
+            "https://api.search.brave.com/res/v1/web/search",
+            headers={
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip",
+                "x-subscription-token": self.search_api_key
+            },
+            params={
+                "q": self.query,
+                "count": 10,
+                "country": "GB"
+            },
+        ).json()
 
-            # TODO: cache responses
-            with open(f'output_{self.query[:3]}.json', "w", encoding="utf-8") as f:
-                json.dump(response, f, indent=4, ensure_ascii=False)
-            
+        # # TODO: cache responses
+        # with open(f'output_{self.query[:3]}.json', "w", encoding="utf-8") as f:
+        #     json.dump(response, f, indent=4, ensure_ascii=False)
+        
         return response
 
     def scrape_results(self, search_results):
