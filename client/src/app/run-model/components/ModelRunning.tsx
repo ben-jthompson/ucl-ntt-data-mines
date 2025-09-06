@@ -1,18 +1,13 @@
 "use client";
 
-import { Box, Typography, LinearProgress, Grid, Card } from "@mui/material";
+import { Typography, LinearProgress, Card } from "@mui/material";
 
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import axios from "axios";
 import { useState, useEffect } from "react";
-import UploadWidget from "./UploadWidget";
-import dynamic from "next/dynamic";
 import { EventSource } from "eventsource";
 import { ReportFile } from "@/types/ReportFile";
 
-const ResultMap = dynamic(() => import("../../../components/ResultMap"), {
-  ssr: false,
-});
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function ModelRunning({
   location,
@@ -31,7 +26,7 @@ export default function ModelRunning({
 
   useEffect(() => {
     onFinishedRunning(true);
-    var encodedLocation = null;
+    let encodedLocation = null;
     if (location) {
       encodedLocation = encodeURIComponent(location);
     }
@@ -40,7 +35,7 @@ export default function ModelRunning({
     const encodedCoords = encodeURIComponent(coords.join(" "));
     const encodedBuffer = encodeURIComponent(buffer);
     try {
-      axios.delete(`http://localhost:8080/api/clients/${client}/model/start`);
+      axios.delete(`${backendUrl}/api/clients/${client}/model/start`);
     } catch (err) {
       console.error("Cleanup failed", err);
     }
@@ -49,7 +44,7 @@ export default function ModelRunning({
 
     if (encodedLocation) {
       const eventSource = new EventSource(
-        `http://localhost:8080/api/pipeline?location=${encodedLocation}&client_id=${encodedClientId}&coords=${encodedCoords}&buffer=${encodedBuffer}`
+        `${backendUrl}/api/pipeline?location=${encodedLocation}&client_id=${encodedClientId}&coords=${encodedCoords}&buffer=${encodedBuffer}`
       );
       eventSource.onmessage = function (event) {
         // add response to ui
@@ -80,7 +75,7 @@ export default function ModelRunning({
           }
         } catch (err) {
           // console.warn("Non-JSON SSE:", event.data);
-          console.log("diff output");
+          console.log(err);
         }
       };
       eventSource.onerror = function (error) {
@@ -89,7 +84,7 @@ export default function ModelRunning({
         onFinishedRunning(false);
       };
     }
-  }, []);
+  }, [coords, location, buffer, onFinishedRunning, onReportCompletion]);
   return (
     <>
       {/* <Grid

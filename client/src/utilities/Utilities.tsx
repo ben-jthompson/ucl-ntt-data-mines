@@ -1,5 +1,7 @@
 import axios from "axios";
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 export function formatDate(dateStr: string) {
   const dateObj = new Date(dateStr);
   const formattedDate = dateObj.toLocaleDateString("en-GB", {
@@ -15,7 +17,7 @@ export function formatDate(dateStr: string) {
 export const downloadReport = async (clientId: string, fileName: string) => {
   try {
     const response = await axios.get(
-      `http://localhost:8080/api/reports/${clientId}/files/${fileName}`,
+      `${backendUrl}/api/reports/${clientId}/files/${fileName}`,
       {
         responseType: "blob",
       }
@@ -40,7 +42,7 @@ export const viewReport = async (
 ) => {
   try {
     const response = await axios.get(
-      `http://localhost:8080/api/reports/${clientId}/files/${fileName}`,
+      `${backendUrl}/api/reports/${clientId}/files/${fileName}`,
       { responseType: "blob" }
     );
 
@@ -56,7 +58,7 @@ export const viewReport = async (
 export const deleteReport = async (clientId: string, fileName: string) => {
   try {
     const response = await axios.delete(
-      `http://localhost:8080/api/reports/${clientId}/files/${fileName}`
+      `${backendUrl}/api/reports/${clientId}/files/${fileName}`
     );
     return response.data;
   } catch (error) {

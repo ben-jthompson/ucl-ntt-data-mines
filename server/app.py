@@ -8,9 +8,12 @@ from flask_limiter import Limiter
 from server.utils import make_file_path, undo_file_path, delete_intermediates
 from server.session_graph import build_session_graph
 from server.info_dicts import MESSAGE_DICT, QUERY_DICT
+from dotenv import load_dotenv
+load_dotenv()
 
+frontend = os.getenv('FRONTEND_URL')
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}}, methods=["GET", "POST", "DELETE", "OPTIONS", "PUT"])
+CORS(app, resources={r"/api/*": {"origins": frontend}}, methods=["GET", "POST", "DELETE", "OPTIONS", "PUT"])
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  
 limiter = Limiter(app)
 active_pipeline = {}
@@ -58,7 +61,7 @@ def delete_file(client_id, file_id):
     if request.method == "OPTIONS":
         # Handle preflight request
         response = make_response()
-        response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+        response.headers["Access-Control-Allow-Origin"] = frontend
         response.headers["Access-Control-Allow-Methods"] = "DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
         return response, 200
@@ -84,7 +87,7 @@ def clean_intermediate_files(client_id):
     if request.method == "OPTIONS":
         # Handle preflight request
         response = make_response()
-        response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+        response.headers["Access-Control-Allow-Origin"] = frontend
         response.headers["Access-Control-Allow-Methods"] = "DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
         return response, 200
@@ -106,7 +109,7 @@ def clean_files(client_id):
     if request.method == "OPTIONS":
         # Handle preflight request
         response = make_response()
-        response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+        response.headers["Access-Control-Allow-Origin"] = frontend
         response.headers["Access-Control-Allow-Methods"] = "DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
         return response, 200

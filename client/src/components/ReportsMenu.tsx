@@ -16,7 +16,6 @@ import {
   DialogActions,
 } from "@mui/material";
 import Delete from "@mui/icons-material/Delete";
-import axios from "axios";
 import { useState } from "react";
 import { ReportFile } from "@/types/ReportFile";
 import DocumentViewer from "./DocumentViewer";

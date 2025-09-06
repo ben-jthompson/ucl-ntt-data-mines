@@ -72,7 +72,7 @@ def figure(image_path: str, width: int, height: int, caption: str, fig_num: int)
     return KeepTogether([fig, Spacer(1, 6), caption_para])
 
 def bibliography(bibliography: List[Dict]):
-    references = []
+    references = [PageBreak()]
     references.append(Paragraph("<b>References</b>", styles['Heading3']))
     for reference in bibliography:
         if reference.get('user'):

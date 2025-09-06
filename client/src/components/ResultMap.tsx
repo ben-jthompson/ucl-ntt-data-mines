@@ -4,14 +4,12 @@ import { Box, Grid, Button, Typography } from "@mui/material";
 import { MapContainer, TileLayer, Marker, Circle, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { stringify } from "querystring";
 import { useState, useEffect } from "react";
 import { ReportFile } from "@/types/ReportFile";
 import { formatDate, viewReport, downloadReport } from "@/utilities/Utilities";
 import DocumentViewer from "./DocumentViewer";
 
 // Apply default marker
-delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
   iconRetinaUrl:
@@ -112,7 +110,7 @@ export default function ResultMap({
     } else {
       setCentre({ lat: 53.505, lng: -0.09 });
     }
-  }, []);
+  }, [result, hasOneResult, reports]);
   return coords ? (
     <Box
       sx={{

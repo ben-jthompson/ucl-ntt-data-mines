@@ -1,6 +1,6 @@
 "use client";
 
-import { Grid, Box, Typography, Paper, Button } from "@mui/material";
+import { Grid, Box, Typography, Button } from "@mui/material";
 import dynamic from "next/dynamic";
 import { ReportFile } from "@/types/ReportFile";
 import axios from "axios";
@@ -8,10 +8,12 @@ const ResultMap = dynamic(() => import("../../../components/ResultMap"), {
   ssr: false,
 });
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 const downloadReport = async (clientId: string, fileName: string) => {
   try {
     const response = await axios.get(
-      `http://localhost:8080/api/reports/${clientId}/files/${fileName}`,
+      `${backendUrl}/api/reports/${clientId}/files/${fileName}`,
       {
         responseType: "blob",
       }
@@ -34,7 +36,7 @@ const downloadReportAccompaniment = async (
 ) => {
   try {
     const response = await axios.get(
-      `http://localhost:8080/api/reports/${clientId}/files/${fileName}/zip`,
+      `${backendUrl}/api/reports/${clientId}/files/${fileName}/zip`,
       { responseType: "blob" }
     );
 
@@ -104,9 +106,6 @@ export default function Output({
           </Box>
         </Box>
       </Grid>
-      <Typography variant="body1" color="text.secondary" gutterBottom>
-        Click on the marker to view the report.
-      </Typography>
     </Grid>
   );
 }

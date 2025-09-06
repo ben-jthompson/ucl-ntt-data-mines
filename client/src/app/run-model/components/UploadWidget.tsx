@@ -11,7 +11,6 @@ import {
   List,
   ListItem,
   IconButton,
-  Input,
   TextField,
   OutlinedInput,
   InputLabel,
@@ -27,6 +26,8 @@ import { v4 as uuidv4 } from "uuid";
 
 import axios from "axios";
 import { UploadedFile } from "@/types/UploadedFile";
+
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 type UploadWidgetProps = {
   open: boolean;
@@ -84,7 +85,7 @@ export default function UploadWidget({
     setTags(typeof value === "string" ? value.split(",") : value);
   };
 
-  const handleFileUpload = (event: React.MouseEvent) => {
+  const handleFileUpload = () => {
     if (!selectedFile) return;
     const selectedFileId = uuidv4();
     const formData = new FormData();
@@ -95,7 +96,7 @@ export default function UploadWidget({
     formData.append("tags", tags ? tags.join(", ") : "");
 
     axios
-      .post(`http://localhost:8080/api/clients/${client}/files`, formData, {
+      .post(`${backendUrl}/api/clients/${client}/files`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -151,7 +152,7 @@ export default function UploadWidget({
   const handleFileRemove = (file: UploadedFile) => {
     const client = localStorage.getItem("clientId") ?? "unknown";
     axios
-      .delete(`http://localhost:8080/api/clients/${client}/files/${file.id}`, {
+      .delete(`${backendUrl}/api/clients/${client}/files/${file.id}`, {
         data: {
           file: file.file_name,
         },

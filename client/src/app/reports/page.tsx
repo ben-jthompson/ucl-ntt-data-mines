@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  Grid,
-  Box,
-  Typography,
-  Link,
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-} from "@mui/material";
-
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import { Grid, Box, Typography } from "@mui/material";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -20,16 +10,16 @@ import ReportsMenu from "@/components/ReportsMenu";
 const ResultMap = dynamic(() => import("../../components/ResultMap"), {
   ssr: false,
 });
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function Reports() {
   const [reports, setReports] = useState<ReportFile[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<string | null>(null);
   useEffect(() => {
-    // TODO: replace localhost!
     const clientId = localStorage.getItem("clientId");
     axios
-      .get(`http://localhost:8080/api/reports/${clientId}`)
+      .get(`${backendUrl}/api/reports/${clientId}`)
       .then((response) => {
         console.log("Response:", response.data);
         if (response.data.success && response.data.files.length > 0) {
@@ -76,8 +66,8 @@ export default function Reports() {
         </>
       ) : (
         <Typography>
-          No reports currently completed. Navigate to 'Run Model' page to get
-          started!{" "}
+          No reports currently completed. Navigate to Run Model page to get
+          started!
         </Typography>
       )}
     </Grid>

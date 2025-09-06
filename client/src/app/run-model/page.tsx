@@ -11,9 +11,7 @@ import {
   Typography,
   Paper,
   CircularProgress,
-  Alert,
 } from "@mui/material";
-import dynamic from "next/dynamic";
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -25,19 +23,13 @@ import Output from "./components/Output";
 
 import { UploadedFile } from "@/types/UploadedFile";
 import { ReportFile } from "@/types/ReportFile";
-
-const ResultMap = dynamic(() => import("../../components/ResultMap"), {
-  ssr: false,
-});
-
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 export default function RunModel() {
   const steps = ["Setup", "Context Validation", "Model Running", "Output"];
 
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [modelRunning, setModelRunning] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // state for user input
   const [coords, setCoords] = useState<[number, number] | null>(null);
@@ -47,11 +39,7 @@ export default function RunModel() {
     null
   );
   const [result, setResult] = useState<ReportFile | null>(null);
-  const [model, setModel] = useState<{}>({ place: "holder" });
   const [cleaning, setCleaning] = useState(false);
-
-  // state for model progress
-  const [status, setStatus] = useState(false);
 
   const router = useRouter();
 
@@ -60,7 +48,7 @@ export default function RunModel() {
     const cleanup = () => {
       setCleaning(true);
       try {
-        axios.delete(`http://localhost:8080/api/clients/${clientId}/model`);
+        axios.delete(`${backendUrl}/api/clients/${clientId}/model`);
       } catch (err) {
         console.error("Cleanup failed", err);
       } finally {
@@ -134,9 +122,7 @@ export default function RunModel() {
               setLoading={setLoading}
               coords={coords}
               radius={radius}
-              model={model}
               setLocation={setLocation}
-              setModel={setModel}
               uploadedFiles={uploadedFiles}
             />
           )
@@ -209,9 +195,9 @@ export default function RunModel() {
                   <Button
                     variant="contained"
                     onClick={handleComplete}
-                    disabled={saving}
+                    disabled={modelRunning}
                   >
-                    {saving ? <CircularProgress size={24} /> : "Complete"}
+                    {modelRunning ? <CircularProgress size={24} /> : "Complete"}
                   </Button>
                 ) : (
                   <Button

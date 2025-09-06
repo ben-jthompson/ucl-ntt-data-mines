@@ -48,7 +48,7 @@ const Header = () => {
               "&:hover": { color: theme.palette.primary.dark },
             }}
           >
-            Data Center Suitability
+            Mine Data Centre Suitability Modelling
           </Typography>
 
           {/* Navigation Links */}

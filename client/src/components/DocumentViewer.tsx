@@ -1,6 +1,5 @@
 import { Worker, Viewer } from "@react-pdf-viewer/core";
 import "@react-pdf-viewer/core/lib/styles/index.css";
-import { version } from "@react-pdf-viewer/core/package.json";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.entry";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import "@react-pdf-viewer/core/lib/styles/index.css";

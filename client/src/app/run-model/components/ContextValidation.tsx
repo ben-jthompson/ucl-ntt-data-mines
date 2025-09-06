@@ -4,7 +4,6 @@ import {
   Grid,
   Box,
   Typography,
-  Link,
   Accordion,
   AccordionDetails,
   AccordionSummary,
@@ -26,8 +25,6 @@ export default function ContextValidation({
   setLoading,
   coords,
   radius,
-  model,
-  setModel,
   setLocation,
   uploadedFiles,
 }: {
@@ -35,8 +32,6 @@ export default function ContextValidation({
   setLoading: (loading: boolean) => void;
   coords: [number, number];
   radius: number;
-  model: {};
-  setModel: (model: {}) => void;
   setLocation: (location: string | undefined) => void;
   uploadedFiles: UploadedFile[] | null;
 }) {
@@ -53,13 +48,6 @@ export default function ContextValidation({
     country: "",
     fullAddress: "",
   });
-  // Resources found from the internet
-  // TODO: delete all this
-  type foundResource = {
-    file: string;
-    source: string;
-    description?: string;
-  };
 
   const apiUrl = `https://nominatim.openstreetmap.org/reverse?lat=${coords[0]}&lon=${coords[1]}&format=json`;
   useEffect(() => {
@@ -93,7 +81,7 @@ export default function ContextValidation({
       );
       setLoading(false);
     });
-  }, []);
+  }, [setLocation, apiUrl, setLoading]);
   console.log(uploadedFiles, "up");
   return (
     <Grid container spacing={6}>

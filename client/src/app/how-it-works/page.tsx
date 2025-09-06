@@ -1,5 +1,4 @@
 import {
-  Box,
   Container,
   Typography,
   Paper,
@@ -28,7 +27,7 @@ export default function HowItWorks() {
           <ListItem>
             <ListItemText
               primary="1. Configure Settings"
-              secondary="Choose your preferred coordinates and radius values. You can click on the map to select a location, or input an address."
+              secondary="In the Run Model page, choose your preferred coordinates and radius values. You can click on the map to select a location, or input an address."
             />
           </ListItem>
 
@@ -42,7 +41,7 @@ export default function HowItWorks() {
           <ListItem>
             <ListItemText
               primary="3. Run the Analysis"
-              secondary="The application will process your data and display your results on the interactive map."
+              secondary="The application will process your data and display your results on the interactive map. (approx. model runtime: 25 minutes)"
             />
           </ListItem>
 

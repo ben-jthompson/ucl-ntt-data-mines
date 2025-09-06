@@ -15,29 +15,26 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature = 0, api_key=api_key)
 @cancellable_node
 def data_rewriter_node(state: SessionState) -> SessionState:
     """
-    Rewrites the  data sections using llm.
+    Rewrites the data sections using llm.
     """
-    print("dwr node")
     report_sections = state.get("data_report_sections", [])
-    with open('rep_sec.txt', 'w') as f:
-        for sec in report_sections:
-            f.write(str(sec))
-    # with open("repo_sec.json", "r", encoding="utf-8") as f:
-    #     report_sections = json.load(f)
     
     for idx, section in enumerate(report_sections):
-        should_cancel(state)
         explanation = section['explanation']
         messages = [
             SystemMessage(content="""You are a professional technical report writer, writing a feasibility report on different aspects affecting suitability of data centre placement within coal mines. 
-                          Ensure the text is rewritten into clean, well-structured paragraphs. Use double newlines (`\n\n`) to declare a new paragraph, or a single newline (`\n`) to move to the next line, where appropriate.
+                          Ensure the text is rewritten into clean, well-structured paragraphs. 
+                        1. Use double newlines (`\n\n`) to declare a new paragraph, or a single newline (`\n`) to move to the next line, where appropriate.
+                        2. If there is any duplicated content(for example, licenses)
                         Preserve the meaning and readability of the content, but make it look like a polished feasibility report section.  
                         Preformated Example:  The Coal Authority licenses coal extraction activities, including mining and exploration. Licensed areas indicate
                         planned or undertaken coal mining operations since 1994. However, many coal workings have remained
                         unworked since then and are recorded as unlicensed, which does not mean a license is unnecessary for
                         operation. Statistics for the selected area include: - A license was applied for at Woolley Colliery Site (HJB), but
                         the application was later cancelled. - A previous license at Woolley Colliery Site (Med) was revoked on 22 March
-                        2016. - An application for Bloomhouse Lane Phase II was granted but has since been withdrawn. \n\n
+                        2016. - An application for Bloomhouse Lane Phase II was granted but has since been withdrawn. 
+                        - An application for Bloomhouse Lane Phase II was granted but has since been withdrawn. 
+                        - An application for Bloomhouse Lane Phase II was granted but has since been withdrawn. \n\n
                           Formatted Example:  The Coal Authority licenses coal extraction activities, including mining and exploration. Licensed areas indicate
                         planned or undertaken coal mining operations since 1994. However, many coal workings have remained
                         unworked since then and are recorded as unlicensed, which does not mean a license is unnecessary for

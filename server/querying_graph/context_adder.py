@@ -7,7 +7,7 @@ class ContextAdder:
     def __init__(self, tag, client_id):
         self.tag = tag
         self.client_id = client_id
-        self.bibliography = None
+        self.bibliography = []
 
     # find the documents uploaded by the user which are relevant
     def get_uploaded_files(self):
@@ -36,7 +36,7 @@ class ContextAdder:
 
     # determine method of parsing based on file format
     def handle_file_parsing(self, doc):
-        document_returned =  extract_from_source(filepath=doc.metadata.get('url'), doc=doc, save_dir='server/uploads')
+        document_returned =  extract_from_source(filepath=doc.metadata.get('url'), doc=doc, client_id=self.client_id, save_dir='server/uploads')
         return document_returned
     
     def run(self):

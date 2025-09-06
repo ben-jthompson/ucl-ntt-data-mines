@@ -15,7 +15,6 @@ import {
   AccordionSummary,
   Button,
   SelectChangeEvent,
-  CircularProgress,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useState, useEffect } from "react";
@@ -27,6 +26,7 @@ import { UploadedFile } from "@/types/UploadedFile";
 import { isInsideBound } from "@/utilities/IsInsideBound";
 import { FeatureCollection } from "geojson";
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 const GeoMap = dynamic(() => import("../../../components/GeoMap"), {
   ssr: false,
 });
@@ -58,10 +58,8 @@ export default function Setup({
   uploadedFiles: UploadedFile[] | null;
   setUploadedFiles: (uploadedFiles: UploadedFile[]) => void;
 }) {
-  const [capacity, setCapacity] = useState<string>("");
   const [widget, setWidget] = useState(false);
   const [address, setAddress] = useState<Address>({});
-  // TODO: check this works (ie, click on coastal mine)!
   const [UKBound, setUKBound] = useState<FeatureCollection | null>(null);
   const [mineExtent, setMineExtent] = useState<FeatureCollection | null>(null);
 
@@ -69,11 +67,7 @@ export default function Setup({
     setWidget(true);
   };
 
-  const handleWidgetClose = () => {
-    setWidget(false);
-  };
-
-  const handleAddressLookup = (event: React.MouseEvent) => {
+  const handleAddressLookup = () => {
     let query = "";
 
     if (address) {
@@ -112,7 +106,7 @@ export default function Setup({
             }
           } else {
             let backupQuery = "";
-            for (const [key, value] of Object.entries(address)) {
+            for (const [, value] of Object.entries(address)) {
               if (value !== undefined && value !== null && value !== "") {
                 backupQuery += `${encodeURIComponent(value)}, `;
               }
@@ -155,20 +149,18 @@ export default function Setup({
 
   useEffect(() => {
     const client = localStorage.getItem("clientId");
-    axios
-      .get(`http://localhost:8080/api/clients/${client}/files`)
-      .then((response) => {
-        console.log("Response:", response.data);
-        if (response.data.files && response.data.files.length) {
-          setUploadedFiles(response.data.files);
-        }
-      });
+    axios.get(`${backendUrl}/api/clients/${client}/files`).then((response) => {
+      console.log("Response:", response.data);
+      if (response.data.files && response.data.files.length) {
+        setUploadedFiles(response.data.files);
+      }
+    });
     setLoading(false);
-  }, []);
+  }, [setUploadedFiles, setLoading]);
 
   useEffect(() => {
     axios
-      .get(`http://localhost:8080/api/geojson/coalfield-extent-4326.geojson`)
+      .get(`${backendUrl}/api/geojson/coalfield-extent-4326.geojson`)
       .then((res) => {
         const geojson = res.data as FeatureCollection;
         setMineExtent(geojson);

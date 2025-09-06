@@ -11,7 +11,7 @@ import contextily as ctx
 import datetime as dt
 from pyproj import Transformer
 from shapely.geometry import Point
-from .data_pipeline_funcs import find_and_sort_features, read_and_convert_geojson_file, find_average_depth, find_geometry_area, sample_features, remove_duplicate_features, convert_point_to_coords, sizing_from_mine_water
+from .data_pipeline_funcs import find_and_sort_features, read_and_convert_geojson_file, find_average_depth, find_geometry_area, sample_features, remove_duplicate_features, convert_point_to_coords, calculation_mine_water
 from ..formatting_graph.formatter_utils import file_format_string
 
 class MineFeasibility:
@@ -137,7 +137,7 @@ class MineFeasibility:
                 depth_str = str(depth_str) if depth_str < -100 else "-100"
                 temp = f"T{depth_str[1:]}m_Equi"
                 temperature = temp_grad[temp]
-                mine_water_calc_non_prob = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(non_prob_min[1]-non_prob_min[0]))
+                mine_water_calc_non_prob = calculation_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(non_prob_min[1]-non_prob_min[0]))
                 if mine_water_calc_non_prob['feasible'] == False:
                     notes.append(mine_water_calc_non_prob['notes'])
                     workings = 0
@@ -152,7 +152,7 @@ class MineFeasibility:
                 depth_str = str(depth_str) if depth_str < -100 else "-100"
                 temp = f"T{depth_str[1:]}m_Equi"
                 temperature = temp_grad[temp]
-                mine_water_calc_prob = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(prob_min[1]-prob_min[0]))
+                mine_water_calc_prob = calculation_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(prob_min[1]-prob_min[0]))
                 if mine_water_calc_prob['feasible'] == False:
                     notes.append(mine_water_calc_prob['notes'])
                     workings *= 0
@@ -168,7 +168,7 @@ class MineFeasibility:
                 depth_str = str(depth_str) if depth_str < -100 else "-100"
                 temp = f"T{depth_str[1:]}m_Equi"
                 temperature = temp_grad[temp]
-                mine_water_calc = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(max(vals)-min(vals)))
+                mine_water_calc = calculation_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=abs(max(vals)-min(vals)))
                 if mine_water_calc['feasible'] == False:
                     notes.append(mine_water_calc['notes'])
                     workings = 0
@@ -191,7 +191,7 @@ class MineFeasibility:
                 depth_str = str(depth_str) if depth_str < -100 else "-100"
                 temp = f"T{depth_str[1:]}m_Equi"
                 temperature = temp_grad[temp]
-                mine_water_calc = sizing_from_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=0)
+                mine_water_calc = calculation_mine_water(Q_watts=595000, T_source_C=temperature, lift_m=0)
                 
                 notes.append(f"Only one working found beneath this point, at {-(np.round(vals[0]))}m below ground level.")
                 workings=0

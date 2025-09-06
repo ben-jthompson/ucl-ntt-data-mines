@@ -193,7 +193,7 @@ def convert_point_to_coords(point: GeoDataFrame):
     lat, lng = point_coords.geometry.y.iloc[0], point_coords.geometry.x.iloc[0]
     return int(round(lat, 2)*100)/100, int(round(lng, 2)*100)/100
 
-def sizing_from_mine_water(
+def calculation_mine_water(
     Q_watts: float,
     T_source_C: float,
     T_target_C: float = 35.0,
@@ -267,9 +267,5 @@ def sizing_from_mine_water(
         "feasible": True,
         "deltaT_used_C": deltaT,
         "vol_flow_l_s": vol_l_s,
-        "pump_power_kW": pump_power_kW,
-        "notes": (
-            "Hydraulic pump power above is gravitational lift only. Add friction/head losses to get "
-            "actual pump specification. Also check heat exchanger approach and allowed return temperatures."
-        ),
+        "pump_power_kW": pump_power_kW
     }

@@ -89,6 +89,7 @@ class Scraper:
                 results.append(Document(page_content=article.text, metadata={'url': url, 'redirect_url': url, 'file_type': 'web'}))
             except Exception as e:
                 try:
+                    self.driver.set_page_load_timeout(20)
                     self.driver.get(url)
                     html = self.driver.page_source
                     text = BeautifulSoup(html, 'html.parser').get_text(separator="\n", strip=True)
