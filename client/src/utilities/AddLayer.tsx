@@ -2,6 +2,8 @@ import { FeatureCollection } from "geojson";
 import axios from "axios";
 import { FeatureLayer } from "@/types/FeatureLayer";
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 export function addLayer({
   layerPath,
   layerName,
@@ -16,7 +18,7 @@ export function addLayer({
   setLayer: React.Dispatch<React.SetStateAction<FeatureCollection | null>>;
 }): void {
   axios
-    .get(`http://localhost:8080/api/geojson/${layerPath}`)
+    .get(`${backendUrl}/api/geojson/${layerPath}`)
     .then((res) => {
       const geojson = res.data as FeatureCollection;
 

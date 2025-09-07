@@ -4,7 +4,6 @@ import {
   Grid,
   Box,
   Typography,
-  Link,
   Accordion,
   AccordionDetails,
   AccordionSummary,
@@ -22,16 +21,18 @@ const ResultMap = dynamic(() => import("../../../components/ResultMap"), {
 });
 
 export default function ContextValidation({
+  loading,
+  setLoading,
   coords,
   radius,
-  model,
-  setModel,
+  setLocation,
   uploadedFiles,
 }: {
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
   coords: [number, number];
   radius: number;
-  model: {};
-  setModel: (model: {}) => void;
+  setLocation: (location: string | undefined) => void;
   uploadedFiles: UploadedFile[] | null;
 }) {
   // Store for OpenStreetMap API Response
@@ -47,23 +48,10 @@ export default function ContextValidation({
     country: "",
     fullAddress: "",
   });
-  // Resources found from the internet
-  type foundResource = {
-    file: string;
-    source: string;
-    description?: string;
-  };
-  const [foundResources, setFoundResources] = useState<foundResource[]>([
-    {
-      file: "Abandoned Mines Dataset",
-      source:
-        "https://www.data.gov.uk/dataset/15777eb2-a97e-4dc8-b435-0e4292d6575c/abandoned-mines-catalogue",
-      description: "Description of plans for abandoned mines in the UK",
-    },
-  ]);
 
   const apiUrl = `https://nominatim.openstreetmap.org/reverse?lat=${coords[0]}&lon=${coords[1]}&format=json`;
   useEffect(() => {
+    setLoading(true);
     axios.get(apiUrl).then((res) => {
       const data = res.data;
       setAreaDescription({
@@ -80,9 +68,21 @@ export default function ContextValidation({
         county: data.address.county || "",
         fullAddress: data.display_name || "",
       });
+      setLocation(
+        data.address.locality ||
+          data.address.neighbourhood ||
+          data.address.suburb ||
+          data.address.hamlet ||
+          data.address.village ||
+          data.address.town ||
+          data.address.city ||
+          data.address.county ||
+          "UK"
+      );
+      setLoading(false);
     });
-  }, []);
-
+  }, [setLocation, apiUrl, setLoading]);
+  console.log(uploadedFiles, "up");
   return (
     <Grid container spacing={6}>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -101,7 +101,7 @@ export default function ContextValidation({
           </Typography>
 
           {/* Uploaded Files List */}
-          {uploadedFiles && (
+          {uploadedFiles && uploadedFiles.length ? (
             <Box mt={3}>
               <Typography variant="subtitle1" gutterBottom>
                 Uploaded Files
@@ -116,66 +116,46 @@ export default function ContextValidation({
                   p: 1,
                 }}
               >
-                {uploadedFiles.map((file, ind) => (
-                  <Accordion key={file.file_name}>
+                {uploadedFiles.map((file) => (
+                  <Accordion
+                    key={file.file_name}
+                    sx={{ mb: 1, borderRadius: 2, boxShadow: 1 }}
+                  >
                     <AccordionSummary
                       expandIcon={<ArrowDropDownIcon />}
-                      aria-controls="panel1-content"
-                      id={file}
+                      aria-controls={`${file.file_name}-content`}
+                      id={`${file.file_name}-header`}
                     >
-                      <Typography component="span">{file.file_name}</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Typography>{file.description}</Typography>
-                    </AccordionDetails>
-                  </Accordion>
-                ))}
-              </Box>
-            </Box>
-          )}
-          {/* Uploaded Files List */}
-          {foundResources && (
-            <Box mt={3}>
-              <Typography variant="subtitle1" gutterBottom>
-                Key Resources found
-              </Typography>
-              <Box
-                mt={3}
-                sx={{
-                  maxHeight: 200,
-                  overflowY: "auto",
-                  border: "1px solid #ccc",
-                  borderRadius: 2,
-                  p: 1,
-                }}
-              >
-                {foundResources.map((resource, ind) => (
-                  <Accordion key={resource.file}>
-                    <AccordionSummary
-                      expandIcon={<ArrowDropDownIcon />}
-                      aria-controls="panel1-content"
-                      id={resource.file}
-                    >
-                      <Typography component="span">{resource.file}</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Typography>
-                        {resource.description || "No description available."}
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {file.display_name}
                       </Typography>
-                      <Link
-                        href={resource.source}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        underline="hover"
-                        color="#00CEC8"
+                    </AccordionSummary>
+
+                    <AccordionDetails>
+                      <Box
+                        sx={{
+                          backgroundColor: "background.default",
+
+                          p: 2,
+                          borderRadius: 1,
+                        }}
                       >
-                        View Source
-                      </Link>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>Description:</strong>{" "}
+                          {file.description || "No description provided"}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Tags:</strong>{" "}
+                          {file.tags?.length ? file.tags.join(", ") : "No tags"}
+                        </Typography>
+                      </Box>
                     </AccordionDetails>
                   </Accordion>
                 ))}
               </Box>
             </Box>
+          ) : (
+            <Typography>No files uploaded.</Typography>
           )}
         </Box>
       </Grid>
@@ -187,17 +167,23 @@ export default function ContextValidation({
             textAlign: "center",
           }}
         >
-          <ResultMap coords={coords} radius={radius} result={false} />
-          {areaDescription.locality ? (
-            <Typography>
-              Searching in this area: {areaDescription.locality}
-            </Typography>
-          ) : (
-            <Typography>
-              Searching in this area: {areaDescription.county}
-            </Typography>
+          <ResultMap coords={coords} radius={radius} />
+          {!loading && (
+            <Box>
+              {areaDescription.locality ? (
+                <Typography>
+                  Searching in this area: {areaDescription.locality}
+                </Typography>
+              ) : (
+                <Typography>
+                  Searching in this area: {areaDescription.county}
+                </Typography>
+              )}
+              <Typography>
+                Full address: {areaDescription.fullAddress}
+              </Typography>
+            </Box>
           )}
-          <Typography>{areaDescription.fullAddress}</Typography>
         </Box>
       </Grid>
     </Grid>
